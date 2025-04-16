@@ -248,12 +248,17 @@ export async function handleAIGenerate(req: Request, res: Response) {
       `Generando respuesta con modelo ${model} y agente ${agentType || "default"}. Prompt: ${prompt.substring(0, 50)}...`,
     );
 
+    // Obtener claves API de los headers
+    const openaiKey = req.headers['x-openai-key'] || process.env.OPENAI_API_KEY;
+    const anthropicKey = req.headers['x-anthropic-key'] || process.env.ANTHROPIC_API_KEY;
+    const geminiKey = req.headers['x-gemini-key'] || process.env.GEMINI_API_KEY;
+
     let response: string;
 
     try {
       switch (model) {
         case "gpt-4o":
-          if (!process.env.OPENAI_API_KEY) {
+          if (!openaiKey) {
             return res
               .status(400)
               .json({ error: "API key de OpenAI no configurada" });
@@ -261,7 +266,7 @@ export async function handleAIGenerate(req: Request, res: Response) {
           response = await generateOpenAIResponse(prompt, code, agentType);
           break;
         case "gemini-2.5":
-          if (!process.env.GEMINI_API_KEY) {
+          if (!geminiKey) {
             return res
               .status(400)
               .json({ error: "API key de Gemini no configurada" });
@@ -270,7 +275,7 @@ export async function handleAIGenerate(req: Request, res: Response) {
           break;
         case "claude-3-7":
         case "claude-3-5-sonnet-v2":
-          if (!process.env.ANTHROPIC_API_KEY) {
+          if (!anthropicKey) {
             return res
               .status(400)
               .json({ error: "API key de Anthropic no configurada" });

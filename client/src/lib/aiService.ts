@@ -1,7 +1,8 @@
+
 // AI Service types and implementation
 
 export type AIModel = 'gpt-4o' | 'gemini-2.5' | 'claude-3-7' | 'claude-3-5-sonnet-v2' | 'qwen-2.5-omni-7b';
-export type AgentType = 'dev' | 'arch' | 'adv';
+export type AgentType = 'dev' | 'architect' | 'advanced';
 export type DevelopmentMode = 'interactive' | 'autonomous';
 
 export interface ModelInfo {
@@ -15,38 +16,38 @@ export interface ModelInfo {
 export const MODEL_INFO: Record<AIModel, ModelInfo> = {
   'gpt-4o': {
     id: 'gpt-4o',
-    name: 'GPT-4o',
-    description: 'Modelo multimodal avanzado de OpenAI con comprensión de código mejorada',
+    name: 'GPT-4.0',
+    description: 'Modelo multimodal y multilingüe para texto, imágenes y audio',
     apiKeyType: 'OPENAI_API_KEY',
-    releaseDate: '2024'
+    releaseDate: 'Mayo 2024'
   },
   'gemini-2.5': {
     id: 'gemini-2.5',
     name: 'Gemini 2.5 Pro',
-    description: 'Modelo multimodal de Google con excelente comprensión de contexto',
+    description: 'Modelo avanzado para texto, audio, imágenes, video y código',
     apiKeyType: 'GEMINI_API_KEY',
-    releaseDate: '2024'
+    releaseDate: 'Marzo 2025'
   },
   'claude-3-7': {
     id: 'claude-3-7',
-    name: 'Claude 3.5 Sonnet',
-    description: 'Modelo de alto rendimiento de Anthropic con comprensión de documentos avanzada',
+    name: 'Claude 3.7',
+    description: 'Modelo híbrido para codificación y resolución de problemas complejos',
     apiKeyType: 'ANTHROPIC_API_KEY',
-    releaseDate: '2024'
+    releaseDate: 'Febrero 2025'
   },
   'claude-3-5-sonnet-v2': {
     id: 'claude-3-5-sonnet-v2',
-    name: 'Claude 3.5 Sonnet v2',
-    description: 'Versión mejorada del modelo Sonnet de Anthropic',
+    name: 'Claude 3.5 Sonnet V2',
+    description: 'Equilibrio entre rendimiento y velocidad',
     apiKeyType: 'ANTHROPIC_API_KEY',
-    releaseDate: '2024'
+    releaseDate: 'Enero 2025'
   },
   'qwen-2.5-omni-7b': {
     id: 'qwen-2.5-omni-7b',
     name: 'Qwen 2.5 Omni 7B',
-    description: 'Modelo open source optimizado para tareas de código',
+    description: 'Modelo multimodal para texto, imagen, audio y video',
     apiKeyType: 'LOCAL',
-    releaseDate: '2024'
+    releaseDate: 'Marzo 2025'
   }
 };
 
@@ -67,8 +68,7 @@ export interface Conversation {
   model: AIModel;
 }
 
-// Implementación real con conexión a APIs
-export class AIService {
+class AIService {
   private model: AIModel = 'gpt-4o';
 
   setModel(model: AIModel) {
@@ -87,11 +87,11 @@ export class AIService {
           systemPrompt += "Especialízate en escribir código limpio y solucionar errores. " +
                          "Genera código sin comentarios y con sintaxis clara. ";
           break;
-        case 'arch':
+        case 'architect':
           systemPrompt += "Especialízate en diseñar sistemas y estructuras de código óptimas. " +
                          "Enfócate en patrones de diseño y arquitectura de software. ";
           break;
-        case 'adv':
+        case 'advanced':
           systemPrompt += "Tienes capacidades completas para tareas complejas de desarrollo. " +
                          "Puedes implementar soluciones avanzadas y optimizadas. ";
           break;
@@ -102,10 +102,17 @@ export class AIService {
                      "Cuando generes código, hazlo sin comentarios, limpio y con resaltado de sintaxis en bloques de código. " +
                      "Cuando sea apropiado, convierte instrucciones en lenguaje natural a comandos de terminal que puedan ejecutarse.";
 
+      const openaiKey = localStorage.getItem('openai_api_key');
+      const anthropicKey = localStorage.getItem('anthropic_api_key');
+      const geminiKey = localStorage.getItem('google_api_key');
+
       const response = await fetch('/api/ai/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-openai-key': openaiKey || '',
+          'x-anthropic-key': anthropicKey || '',
+          'x-gemini-key': geminiKey || ''
         },
         body: JSON.stringify({
           model: this.model,
@@ -188,19 +195,19 @@ export async function generateAIResponse(
         model,
         prompt,
         code,
-        agentType,
+        agentType
       }),
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Error al generar respuesta de IA');
+      const error = await response.json();
+      throw new Error(error.error || 'Error en la solicitud');
     }
 
     const data = await response.json();
     return data.response;
   } catch (error: any) {
-    console.error('Error generando respuesta:', error);
-    throw new Error(`Error: ${error.message}`);
+    console.error('Error al generar respuesta:', error);
+    return `Error: ${error.message}`;
   }
 }
