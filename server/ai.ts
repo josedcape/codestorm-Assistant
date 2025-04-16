@@ -2,14 +2,50 @@ import { Request, Response } from 'express';
 import axios from 'axios';
 
 // Función para generar una respuesta de OpenAI
-async function generateOpenAIResponse(prompt: string, code?: string) {
+async function generateOpenAIResponse(prompt: string, code?: string, agentType?: string) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     throw new Error('OpenAI API key no configurada');
   }
 
+  // Seleccionar el sistema de instrucciones según el tipo de agente
+  let systemPrompt = 'Eres un asistente de programación experto. Responde en español.';
+  
+  if (agentType === 'dev') {
+    systemPrompt = `Eres un Agente de Desarrollo experto, altamente capacitado en la edición y optimización de código en tiempo real.
+Tus capacidades incluyen:
+- Corrección y refactorización de código utilizando linters y herramientas como Pylint, ESLint y Prettier
+- Optimización de rendimiento con técnicas como caching, optimización de consultas SQL, lazy loading y code splitting
+- Integración de frameworks modernos como FastAPI, Flask, Express.js, React con Hooks y React Router
+- Automatización de tareas con herramientas CI/CD como GitHub Actions y CircleCI
+- Generación de código limpio, legible, modular y mantenible
+
+Responde siempre en español y ofrece soluciones prácticas con ejemplos de código específicos.`;
+  } else if (agentType === 'architect') {
+    systemPrompt = `Eres un Agente de Arquitectura experto, responsable de diseñar arquitecturas escalables y optimizadas.
+Tus capacidades incluyen:
+- Definición de estructuras de proyecto organizadas con herramientas como Docker y Kubernetes
+- Selección de tecnologías y frameworks adecuados (Django, FastAPI, React, Redux, React Native)
+- Asesoría en elección de bases de datos (PostgreSQL, MongoDB, Firebase, AWS DynamoDB)
+- Implementación de microservicios y arquitecturas basadas en eventos con RabbitMQ o Kafka
+- Planificación de UI/UX y patrones de diseño como Atomic Design, Styled Components y Material UI
+
+Responde siempre en español y ofrece soluciones estructuradas con diagramas y ejemplos cuando sea posible.`;
+  } else if (agentType === 'advanced') {
+    systemPrompt = `Eres un Agente Avanzado de Software especializado en integraciones complejas y creación de funciones avanzadas.
+Tus capacidades incluyen:
+- Gestión de APIs (RESTful, GraphQL) y microservicios con Docker y Kubernetes
+- Optimización de backend con Nginx, Redis y manejo de tareas asíncronas con Celery
+- Automatización avanzada con Node.js, Grunt y Gulp
+- Implementación de autenticación segura con OAuth 2.0, JWT y Passport.js
+- Integración con servicios cloud (AWS, Google Cloud, Azure) 
+- Configuración de despliegue y pruebas automatizadas con Docker, Heroku, Jest, PyTest y Mocha
+
+Responde siempre en español y ofrece soluciones técnicas avanzadas con ejemplos de implementación detallados.`;
+  }
+
   const messages = [
-    { role: 'system', content: 'Eres un asistente de programación experto. Responde en español.' },
+    { role: 'system', content: systemPrompt },
     { role: 'user', content: prompt }
   ];
 
@@ -157,13 +193,13 @@ async function generateClaudeResponse(prompt: string, code?: string, model: stri
 // Ruta para manejar la generación de respuestas
 export async function handleAIGenerate(req: Request, res: Response) {
   try {
-    const { model, prompt, code } = req.body;
+    const { model, prompt, code, agentType } = req.body;
 
     if (!prompt) {
       return res.status(400).json({ error: 'Se requiere un prompt' });
     }
 
-    console.log(`Generando respuesta con modelo ${model}. Prompt: ${prompt.substring(0, 50)}...`);
+    console.log(`Generando respuesta con modelo ${model} y agente ${agentType || 'default'}. Prompt: ${prompt.substring(0, 50)}...`);
 
     let response: string;
 
@@ -173,7 +209,7 @@ export async function handleAIGenerate(req: Request, res: Response) {
           if (!process.env.OPENAI_API_KEY) {
             return res.status(400).json({ error: 'API key de OpenAI no configurada' });
           }
-          response = await generateOpenAIResponse(prompt, code);
+          response = await generateOpenAIResponse(prompt, code, agentType);
           break;
         case 'gemini-2.5':
           if (!process.env.GEMINI_API_KEY) {

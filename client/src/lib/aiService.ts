@@ -1,4 +1,3 @@
-
 // AI Service types and implementation
 
 export type AIModel = 'gpt-4o' | 'gemini-2.5' | 'claude-3-7' | 'claude-3-5-sonnet-v2' | 'qwen-2.5-omni-7b';
@@ -79,10 +78,10 @@ export class AIService {
   async generateResponse(prompt: string, code?: string, agentType: AgentType = 'dev'): Promise<string> {
     try {
       console.log(`AIService: Enviando prompt al servidor usando modelo ${this.model} con agente ${agentType}`);
-      
+
       // Construir instrucciones según el tipo de agente
       let systemPrompt = "Eres un asistente de programación experto. ";
-      
+
       switch(agentType) {
         case 'dev':
           systemPrompt += "Especialízate en escribir código limpio y solucionar errores. " +
@@ -97,12 +96,12 @@ export class AIService {
                          "Puedes implementar soluciones avanzadas y optimizadas. ";
           break;
       }
-      
+
       // Añadir instrucciones para formato y estilo
       systemPrompt += "Responde en español usando formato Markdown. Utiliza emojis para resaltar puntos importantes. " +
                      "Cuando generes código, hazlo sin comentarios, limpio y con resaltado de sintaxis en bloques de código. " +
                      "Cuando sea apropiado, convierte instrucciones en lenguaje natural a comandos de terminal que puedan ejecutarse.";
-      
+
       const response = await fetch('/api/ai/generate', {
         method: 'POST',
         headers: {
@@ -118,7 +117,7 @@ export class AIService {
       });
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         console.error('Error del servidor:', data);
         throw new Error(data.error || 'Error al comunicarse con la API de IA');
@@ -127,11 +126,11 @@ export class AIService {
       if (data.warning) {
         console.warn('Advertencia del servidor:', data.warning);
       }
-      
+
       if (!data.response) {
         throw new Error('La respuesta del servidor no contiene el campo "response"');
       }
-      
+
       console.log('AIService: Respuesta recibida correctamente');
       return data.response;
     } catch (error: any) {
@@ -165,3 +164,36 @@ export class AIService {
 }
 
 export const aiService = new AIService();
+
+export async function generateAIResponse(
+  model: AIModel,
+  prompt: string,
+  code?: string,
+  agentType?: AgentType
+): Promise<string> {
+  try {
+    const response = await fetch('/api/ai/generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        prompt,
+        code,
+        agentType,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Error al generar respuesta de IA');
+    }
+
+    const data = await response.json();
+    return data.response;
+  } catch (error: any) {
+    console.error('Error generando respuesta:', error);
+    throw new Error(`Error: ${error.message}`);
+  }
+}

@@ -8,15 +8,40 @@ import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { AppProvider } from "./context/AppContext";
 import CodeCorrectionModal from './components/CodeCorrectionModal'; // Added import
-import { useAppContext } from './context/AppContext'; // Added import
-
-
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
       <Route component={NotFound} />
     </Switch>
+  );
+}
+
+function AppWithProviders() {
+  const { 
+    isCodeCorrectionModalOpen, 
+    selectedFileForCorrection, 
+    closeCodeCorrectionModal,
+    applyCodeCorrection
+  } = useAppContext();
+  
+  return (
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="min-h-screen overflow-y-auto"
+    >
+      <Router />
+      <Toaster />
+      {/* Modal de corrección de código */}
+      <CodeCorrectionModal 
+        isOpen={isCodeCorrectionModalOpen}
+        onClose={closeCodeCorrectionModal}
+        file={selectedFileForCorrection}
+        onApplyChanges={applyCodeCorrection}
+      />
+    </motion.div>
   );
 }
 
@@ -36,32 +61,10 @@ function App() {
     body.style.overflowX = "auto";
   }, []);
 
-  const { 
-    isCodeCorrectionModalOpen, 
-    selectedFileForCorrection, 
-    closeCodeCorrectionModal,
-    applyCodeCorrection
-  } = useAppContext();
-
   return (
     <QueryClientProvider client={queryClient}>
       <AppProvider>
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="min-h-screen overflow-y-auto"
-        >
-          <Router />
-          <Toaster />
-          {/* Modal de corrección de código */}
-          <CodeCorrectionModal 
-            isOpen={isCodeCorrectionModalOpen}
-            onClose={closeCodeCorrectionModal}
-            file={selectedFileForCorrection}
-            onApplyChanges={applyCodeCorrection}
-          />
-        </motion.div>
+        <AppWithProviders />
       </AppProvider>
     </QueryClientProvider>
   );
