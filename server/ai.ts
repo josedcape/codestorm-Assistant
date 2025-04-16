@@ -1,17 +1,24 @@
-import { Request, Response } from 'express';
-import axios from 'axios';
+import { Request, Response } from "express";
+import axios from "axios";
 
 // Función para generar una respuesta de OpenAI
-async function generateOpenAIResponse(prompt: string, code?: string, agentType?: string) {
+async function generateOpenAIResponse(
+  prompt: string,
+  code?: string,
+  agentType?: string,
+) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    throw new Error('❌ API key de OpenAI no configurada. Por favor, configura tu clave API en la sección de Secrets.');
+    throw new Error(
+      "❌ API key de OpenAI no configurada. Por favor, configura tu clave API en la sección de Secrets.",
+    );
   }
 
   // Seleccionar el sistema de instrucciones según el tipo de agente
-  let systemPrompt = 'Eres un asistente de programación experto. Responde en español.';
-  
-  if (agentType === 'dev') {
+  let systemPrompt =
+    "Eres un asistente de programación experto. Responde en español.";
+
+  if (agentType === "dev") {
     systemPrompt = `Eres un Agente de Desarrollo experto, altamente capacitado en la edición y optimización de código en tiempo real.
 Tus capacidades incluyen:
 - Corrección y refactorización de código utilizando linters y herramientas como Pylint, ESLint y Prettier
@@ -21,7 +28,7 @@ Tus capacidades incluyen:
 - Generación de código limpio, legible, modular y mantenible
 
 Responde siempre en español y ofrece soluciones prácticas con ejemplos de código específicos.`;
-  } else if (agentType === 'architect') {
+  } else if (agentType === "architect") {
     systemPrompt = `Eres un Agente de Arquitectura experto, responsable de diseñar arquitecturas escalables y optimizadas.
 Tus capacidades incluyen:
 - Definición de estructuras de proyecto organizadas con herramientas como Docker y Kubernetes
@@ -31,7 +38,7 @@ Tus capacidades incluyen:
 - Planificación de UI/UX y patrones de diseño como Atomic Design, Styled Components y Material UI
 
 Responde siempre en español y ofrece soluciones estructuradas con diagramas y ejemplos cuando sea posible.`;
-  } else if (agentType === 'advanced') {
+  } else if (agentType === "advanced") {
     systemPrompt = `Eres un Agente Avanzado de Software especializado en integraciones complejas y creación de funciones avanzadas.
 Tus capacidades incluyen:
 - Gestión de APIs (RESTful, GraphQL) y microservicios con Docker y Kubernetes
@@ -45,52 +52,57 @@ Responde siempre en español y ofrece soluciones técnicas avanzadas con ejemplo
   }
 
   const messages = [
-    { role: 'system', content: systemPrompt },
-    { role: 'user', content: prompt }
+    { role: "system", content: systemPrompt },
+    { role: "user", content: prompt },
   ];
 
   // Si hay código, añadirlo como contexto
   if (code) {
     messages.push({
-      role: 'user',
-      content: `Contexto de código:\n\`\`\`\n${code}\n\`\`\``
+      role: "user",
+      content: `Contexto de código:\n\`\`\`\n${code}\n\`\`\``,
     });
   }
 
   try {
-    console.log('Enviando solicitud a OpenAI...');
+    console.log("Enviando solicitud a OpenAI...");
 
     const response = await axios.post(
-      'https://api.openai.com/v1/chat/completions',
+      "https://api.openai.com/v1/chat/completions",
       {
-        model: 'gpt-4o',
+        model: "gpt-4o",
         messages,
         temperature: 0.7,
-        max_tokens: 1000
+        max_tokens: 1000,
       },
       {
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        }
-      }
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`,
+        },
+      },
     );
 
     // Verificar que la respuesta tenga el formato esperado
-    if (response.data.choices && 
-        response.data.choices.length > 0 && 
-        response.data.choices[0].message && 
-        response.data.choices[0].message.content) {
-      console.log('Respuesta de OpenAI recibida correctamente');
+    if (
+      response.data.choices &&
+      response.data.choices.length > 0 &&
+      response.data.choices[0].message &&
+      response.data.choices[0].message.content
+    ) {
+      console.log("Respuesta de OpenAI recibida correctamente");
       return response.data.choices[0].message.content;
     } else {
-      console.error('Respuesta de OpenAI en formato inesperado:', response.data);
-      throw new Error('Formato de respuesta de OpenAI inesperado');
+      console.error(
+        "Respuesta de OpenAI en formato inesperado:",
+        response.data,
+      );
+      throw new Error("Formato de respuesta de OpenAI inesperado");
     }
   } catch (error) {
-    console.error('Error al llamar a la API de OpenAI:', error);
+    console.error("Error al llamar a la API de OpenAI:", error);
     if (axios.isAxiosError(error) && error.response) {
-      console.error('Detalles de la respuesta de error:', error.response.data);
+      console.error("Detalles de la respuesta de error:", error.response.data);
     }
     throw error;
   }
@@ -100,93 +112,121 @@ Responde siempre en español y ofrece soluciones técnicas avanzadas con ejemplo
 async function generateGeminiResponse(prompt: string, code?: string) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    throw new Error('Gemini API key no configurada');
+    throw new Error("Gemini API key no configurada");
   }
 
-  const fullPrompt = code 
+  const fullPrompt = code
     ? `${prompt}\n\nContexto de código:\n\`\`\`\n${code}\n\`\`\``
     : prompt;
 
   try {
+    // Endpoint actualizado para Gemini 1.5 Pro
     const response = await axios.post(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent`,
       {
         contents: [
           {
             parts: [
               {
-                text: `Eres un asistente de programación experto. Responde siempre en español.\n\n${fullPrompt}`
-              }
-            ]
-          }
+                text: `Eres un asistente de programación experto. Responde siempre en español.\n\n${fullPrompt}`,
+              },
+            ],
+          },
         ],
         generationConfig: {
           temperature: 0.7,
-          maxOutputTokens: 1000
-        }
-      }
+          maxOutputTokens: 1000,
+        },
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": apiKey,
+        },
+        params: {
+          key: apiKey,  // También incluido como parámetro de URL para mayor compatibilidad
+        },
+      },
     );
 
     // Verificar que la respuesta tenga el formato esperado
-    if (response.data.candidates && 
-        response.data.candidates.length > 0 && 
-        response.data.candidates[0].content && 
-        response.data.candidates[0].content.parts && 
-        response.data.candidates[0].content.parts.length > 0) {
+    if (
+      response.data.candidates &&
+      response.data.candidates.length > 0 &&
+      response.data.candidates[0].content &&
+      response.data.candidates[0].content.parts &&
+      response.data.candidates[0].content.parts.length > 0
+    ) {
       return response.data.candidates[0].content.parts[0].text;
     } else {
-      console.error('Respuesta de Gemini en formato inesperado:', response.data);
+      console.error(
+        "Respuesta de Gemini en formato inesperado:",
+        response.data,
+      );
       return "Lo siento, no pude procesar la respuesta de Gemini. Por favor intenta con otro modelo.";
     }
   } catch (error) {
-    console.error('Error al llamar a la API de Gemini:', error);
+    console.error("Error al llamar a la API de Gemini:", error);
     if (axios.isAxiosError(error) && error.response) {
-      console.error('Detalles de la respuesta de error:', error.response.data);
+      console.error("Detalles de la respuesta de error:", error.response.data);
     }
     throw error;
   }
 }
 
 // Función para generar una respuesta de Anthropic/Claude
-async function generateClaudeResponse(prompt: string, code?: string, model: string = 'claude-3-sonnet-20240229') {
+async function generateClaudeResponse(
+  prompt: string,
+  code?: string,
+  model: string = "claude-3-sonnet-20240229",
+) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    throw new Error('Anthropic API key no configurada');
+    throw new Error("Anthropic API key no configurada");
   }
 
-  const fullPrompt = code 
+  const fullPrompt = code
     ? `${prompt}\n\nContexto de código:\n\`\`\`\n${code}\n\`\`\``
     : prompt;
 
-  const response = await axios.post(
-    'https://api.anthropic.com/v1/messages',
-    {
-      model: model,
-      max_tokens: 1000,
-      temperature: 0.7,
-      system: "Actúa como un desarrollador altamente capacitado que puede ayudar, hacer recomendaciones y sugerencias para desarrollar de la forma más eficiente aplicaciones según las indicaciones del usuario. Tienes la capacidad de crear archivos, carpetas y ejecutar comandos en la terminal. Ofrece siempre soluciones prácticas y eficientes. Responde siempre en español.",
-      messages: [
-        {
-          role: "user",
-          content: fullPrompt
-        }
-      ]
-    },
-    {
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01'
-      }
-    }
-  );
+  try {
+    const response = await axios.post(
+      "https://api.anthropic.com/v1/messages",
+      {
+        model: model,
+        max_tokens: 1000,
+        temperature: 0.7,
+        system:
+          "Actúa como un desarrollador altamente capacitado que puede ayudar, hacer recomendaciones y sugerencias para desarrollar de la forma más eficiente aplicaciones según las indicaciones del usuario. Tienes la capacidad de crear archivos, carpetas y ejecutar comandos en la terminal. Ofrece siempre soluciones prácticas y eficientes. Responde siempre en español.",
+        messages: [
+          {
+            role: "user",
+            content: fullPrompt,
+          },
+        ],
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "anthropic-api-key": apiKey,  // Corregido: de "x-api-key" a "anthropic-api-key"
+          "anthropic-version": "2023-06-01",
+        },
+      },
+    );
 
-  // Claude devuelve la respuesta en un formato diferente
-  if (response.data.content && response.data.content.length > 0) {
-    return response.data.content[0].text;
-  } else {
-    console.error('Respuesta de Claude sin contenido:', response.data);
-    throw new Error('Formato de respuesta de Claude inesperado');
+    // Claude devuelve la respuesta en un formato diferente
+    if (response.data.content && response.data.content.length > 0) {
+      return response.data.content[0].text;
+    } else {
+      console.error("Respuesta de Claude sin contenido:", response.data);
+      throw new Error("Formato de respuesta de Claude inesperado");
+    }
+  } catch (error) {
+    console.error("Error al llamar a la API de Claude:", error);
+    if (axios.isAxiosError(error) && error.response) {
+      console.error("Detalles de la respuesta de error:", error.response.data);
+    }
+    throw error;
   }
 }
 
@@ -196,42 +236,57 @@ export async function handleAIGenerate(req: Request, res: Response) {
     const { model, prompt, code, agentType } = req.body;
 
     if (!prompt) {
-      return res.status(400).json({ error: 'Se requiere un prompt' });
+      return res.status(400).json({ error: "Se requiere un prompt" });
     }
 
-    console.log(`Generando respuesta con modelo ${model} y agente ${agentType || 'default'}. Prompt: ${prompt.substring(0, 50)}...`);
+    console.log(
+      `Generando respuesta con modelo ${model} y agente ${agentType || "default"}. Prompt: ${prompt.substring(0, 50)}...`,
+    );
 
     let response: string;
 
     try {
       switch (model) {
-        case 'gpt-4o':
+        case "gpt-4o":
           if (!process.env.OPENAI_API_KEY) {
-            return res.status(400).json({ error: 'API key de OpenAI no configurada' });
+            return res
+              .status(400)
+              .json({ error: "API key de OpenAI no configurada" });
           }
           response = await generateOpenAIResponse(prompt, code, agentType);
           break;
-        case 'gemini-2.5':
+        case "gemini-2.5":
           if (!process.env.GEMINI_API_KEY) {
-            return res.status(400).json({ error: 'API key de Gemini no configurada' });
+            return res
+              .status(400)
+              .json({ error: "API key de Gemini no configurada" });
           }
           response = await generateGeminiResponse(prompt, code);
           break;
-        case 'claude-3-7':
-        case 'claude-3-5-sonnet-v2':
+        case "claude-3-7":
+        case "claude-3-5-sonnet-v2":
           if (!process.env.ANTHROPIC_API_KEY) {
-            return res.status(400).json({ error: 'API key de Anthropic no configurada' });
+            return res
+              .status(400)
+              .json({ error: "API key de Anthropic no configurada" });
           }
-          const claudeModel = model === 'claude-3-7' ? 'claude-3-opus-20240229' : 'claude-3-sonnet-20240229';
+          const claudeModel =
+            model === "claude-3-7"
+              ? "claude-3-opus-20240229"
+              : "claude-3-sonnet-20240229";
           response = await generateClaudeResponse(prompt, code, claudeModel);
           break;
-        case 'qwen-2.5-omni-7b':
+        case "qwen-2.5-omni-7b":
           // Para modelos locales, podríamos implementar una solución diferente
           // Por ahora, usamos OpenAI como fallback si está configurado
           if (process.env.OPENAI_API_KEY) {
             response = await generateOpenAIResponse(prompt, code);
           } else {
-            return res.status(400).json({ error: 'No hay un modelo disponible para usar como fallback' });
+            return res
+              .status(400)
+              .json({
+                error: "No hay un modelo disponible para usar como fallback",
+              });
           }
           break;
         default:
@@ -239,7 +294,9 @@ export async function handleAIGenerate(req: Request, res: Response) {
           if (process.env.OPENAI_API_KEY) {
             response = await generateOpenAIResponse(prompt, code);
           } else {
-            return res.status(400).json({ error: 'Modelo no válido y no hay fallback disponible' });
+            return res
+              .status(400)
+              .json({ error: "Modelo no válido y no hay fallback disponible" });
           }
       }
 
@@ -249,16 +306,16 @@ export async function handleAIGenerate(req: Request, res: Response) {
       console.error(`Error específico del modelo ${model}:`, modelError);
 
       // Intentar con otro modelo si el principal falla
-      if (model !== 'gpt-4o' && process.env.OPENAI_API_KEY) {
-        console.log('Intentando con GPT-4o como fallback...');
+      if (model !== "gpt-4o" && process.env.OPENAI_API_KEY) {
+        console.log("Intentando con GPT-4o como fallback...");
         try {
           response = await generateOpenAIResponse(prompt, code);
-          return res.json({ 
-            response, 
-            warning: `El modelo ${model} falló, usando GPT-4o como alternativa.` 
+          return res.json({
+            response,
+            warning: `El modelo ${model} falló, usando GPT-4o como alternativa.`,
           });
         } catch (fallbackError) {
-          console.error('El fallback a GPT-4o también falló:', fallbackError);
+          console.error("El fallback a GPT-4o también falló:", fallbackError);
         }
       }
 
@@ -266,11 +323,11 @@ export async function handleAIGenerate(req: Request, res: Response) {
       throw modelError;
     }
   } catch (error: any) {
-    console.error('Error al generar respuesta de IA:', error);
-    let errorMessage = '⚠️ Error interno del servidor';
+    console.error("Error al generar respuesta de IA:", error);
+    let errorMessage = "⚠️ Error interno del servidor";
 
     if (error.response && error.response.data) {
-      console.error('Detalles de la respuesta de error:', error.response.data);
+      console.error("Detalles de la respuesta de error:", error.response.data);
       errorMessage = `⚠️ **Error**: ${error.message}\n\n**Detalles**: ${JSON.stringify(error.response.data)}`;
     } else if (error.message) {
       errorMessage = `⚠️ **Error**: ${error.message}`;
@@ -286,12 +343,12 @@ export async function handleTerminalExecute(req: Request, res: Response) {
     const { command } = req.body;
 
     if (!command) {
-      return res.status(400).json({ error: 'Se requiere un comando' });
+      return res.status(400).json({ error: "Se requiere un comando" });
     }
 
     // Implementación básica - en un entorno real deberías usar
     // medidas de seguridad adicionales antes de ejecutar comandos
-    const { exec } = require('child_process');
+    const { exec } = require("child_process");
 
     exec(command, (error: any, stdout: string, stderr: string) => {
       if (error) {
@@ -305,8 +362,10 @@ export async function handleTerminalExecute(req: Request, res: Response) {
       res.json({ output: stdout });
     });
   } catch (error: any) {
-    console.error('Error al ejecutar comando:', error);
-    res.status(500).json({ error: error.message || 'Error interno del servidor' });
+    console.error("Error al ejecutar comando:", error);
+    res
+      .status(500)
+      .json({ error: error.message || "Error interno del servidor" });
   }
 }
 
@@ -316,10 +375,16 @@ export async function handleCodeCorrection(req: Request, res: Response) {
     const { content, instructions, language, fileId, projectId } = req.body;
 
     if (!content || !instructions) {
-      return res.status(400).json({ error: 'Se requieren el contenido del código y las instrucciones' });
+      return res
+        .status(400)
+        .json({
+          error: "Se requieren el contenido del código y las instrucciones",
+        });
     }
 
-    console.log(`Solicitando corrección de código. Lenguaje: ${language}, Instrucciones: ${instructions.substring(0, 50)}...`);
+    console.log(
+      `Solicitando corrección de código. Lenguaje: ${language}, Instrucciones: ${instructions.substring(0, 50)}...`,
+    );
 
     // Construir un prompt específico para la corrección de código
     const prompt = `
@@ -340,22 +405,22 @@ Devuelve la respuesta en el siguiente formato:
 
     // Usar el modelo de GPT-4 para obtener la mejor corrección
     const response = await generateOpenAIResponse(prompt);
-    
+
     // Procesar la respuesta para extraer el código corregido y explicaciones
     const correctedCode = extractCorrectedCode(response, language);
     const changes = extractChanges(response);
     const explanation = extractExplanation(response);
 
     console.log("Corrección de código generada exitosamente");
-    
+
     res.json({
-      correctedCode: correctedCode || content,  // Si no se pudo extraer, devolver el código original
+      correctedCode: correctedCode || content, // Si no se pudo extraer, devolver el código original
       changes,
-      explanation
+      explanation,
     });
   } catch (error: any) {
-    console.error('Error al corregir código:', error);
-    let errorMessage = 'Error interno al corregir el código';
+    console.error("Error al corregir código:", error);
+    let errorMessage = "Error interno al corregir el código";
 
     if (error.response && error.response.data) {
       errorMessage = `Error: ${error.message}. Detalles: ${JSON.stringify(error.response.data)}`;
@@ -368,73 +433,89 @@ Devuelve la respuesta en el siguiente formato:
 }
 
 // Función auxiliar para extraer el código corregido de la respuesta
-function extractCorrectedCode(response: string, language: string): string | null {
+function extractCorrectedCode(
+  response: string,
+  language: string,
+): string | null {
   // Intentar encontrar el código entre bloques de código markdown
-  const codeBlockRegex = new RegExp(`\`\`\`(?:${language})?\\n([\\s\\S]*?)\\n\`\`\``, 'i');
+  const codeBlockRegex = new RegExp(
+    `\`\`\`(?:${language})?\\n([\\s\\S]*?)\\n\`\`\``,
+    "i",
+  );
   const match = response.match(codeBlockRegex);
-  
+
   if (match && match[1]) {
     return match[1].trim();
   }
-  
+
   // Si no hay bloques de código, intentar extraer de otras formas
   // Por ejemplo, buscar secciones que empiecen con "Código corregido:"
-  const sectionRegex = /(?:Código corregido:|Código mejorado:|Aquí está el código corregido:)(?:\s*\n+)?([\s\S]+?)(?:\n\s*\n|$)/i;
+  const sectionRegex =
+    /(?:Código corregido:|Código mejorado:|Aquí está el código corregido:)(?:\s*\n+)?([\s\S]+?)(?:\n\s*\n|$)/i;
   const sectionMatch = response.match(sectionRegex);
-  
+
   if (sectionMatch && sectionMatch[1]) {
     return sectionMatch[1].trim();
   }
-  
+
   return null;
 }
 
 // Función auxiliar para extraer los cambios realizados
-function extractChanges(response: string): { description: string; lineNumbers?: number[] }[] {
+function extractChanges(
+  response: string,
+): { description: string; lineNumbers?: number[] }[] {
   const changes: { description: string; lineNumbers?: number[] }[] = [];
-  
+
   // Buscar patrones como "Línea 10: Cambié X por Y"
-  const changeRegex = /(?:línea|líneas)\s+(\d+(?:\s*[-,]\s*\d+)*)\s*:\s*([^\n]+)/gi;
+  const changeRegex =
+    /(?:línea|líneas)\s+(\d+(?:\s*[-,]\s*\d+)*)\s*:\s*([^\n]+)/gi;
   let match;
-  
+
   while ((match = changeRegex.exec(response)) !== null) {
     const lineNumbersText = match[1];
     const description = match[2].trim();
-    
+
     // Procesar números de línea (puede ser "10", "10-15", "10, 11, 12", etc.)
-    const lineNumbers = lineNumbersText.split(/\s*[-,]\s*/).map(n => parseInt(n.trim(), 10));
-    
+    const lineNumbers = lineNumbersText
+      .split(/\s*[-,]\s*/)
+      .map((n) => parseInt(n.trim(), 10));
+
     changes.push({
       description,
-      lineNumbers
+      lineNumbers,
     });
   }
-  
+
   // Si no encontramos cambios con el patrón de línea, buscar listas
   if (changes.length === 0) {
     const listItemRegex = /(?:^|\n)(?:[*-]|\d+\.)\s*([^\n]+)/g;
-    
+
     while ((match = listItemRegex.exec(response)) !== null) {
       const description = match[1].trim();
-      if (description && !description.toLowerCase().includes("código corregido") && 
-          !description.toLowerCase().includes("explicación")) {
+      if (
+        description &&
+        !description.toLowerCase().includes("código corregido") &&
+        !description.toLowerCase().includes("explicación")
+      ) {
         changes.push({ description });
       }
     }
   }
-  
+
   return changes;
 }
 
 // Función auxiliar para extraer la explicación general
 function extractExplanation(response: string): string | undefined {
   // Buscar secciones que parezcan explicaciones
-  const explanationRegex = /(?:explicación general|explicación|mejoras realizadas|resumen de cambios):\s*\n+(.+(?:\n+(?!\n*(?:código|corrección|\d+\.|[*-]|\`\`\`)).+)*)/i;
+  const explanationRegex =
+    /(?:explicación general|explicación|mejoras realizadas|resumen de cambios):\s*\n+(.+(?:\n+(?!\n*(?:código|corrección|\d+\.|[*-]|\`\`\`)).+)*)/i;
   const match = response.match(explanationRegex);
-  
+
   if (match && match[1]) {
     return match[1].trim();
   }
-  
+
   return undefined;
 }
