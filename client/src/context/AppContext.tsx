@@ -34,6 +34,7 @@ export interface TerminalLine {
   type: 'command' | 'output' | 'success' | 'error' | 'code';
   language?: string;
   code?: string;
+  fromVoice?: boolean;
 }
 
 interface AppContextType {
