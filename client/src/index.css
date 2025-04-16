@@ -9,8 +9,9 @@
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground overflow-hidden;
+    @apply font-sans antialiased bg-background text-foreground overflow-x-hidden overflow-y-auto;
     background-color: #0d1b3a; /* Azul oscuro como en las imágenes */
+    min-height: 100vh;
   }
   
   /* Futuristic UI Elements */
@@ -90,7 +91,7 @@
   }
 
   .codestorm-assistant-panel {
-    @apply fixed right-0 top-14 w-80 bg-card rounded-l-lg shadow-xl border-l border-t border-b border-blue-500 z-50;
+    @apply fixed right-0 top-14 w-80 bg-card rounded-l-lg shadow-xl border-l border-t border-b border-blue-500 z-50 overflow-y-auto;
     height: calc(100vh - 56px);
     transition: transform 0.3s ease;
   }
@@ -204,5 +205,16 @@
   
   ::-webkit-scrollbar-thumb:hover {
     @apply bg-muted-foreground;
+  }
+  
+  /* Ensure main content areas are scrollable */
+  .main-content-area {
+    @apply overflow-y-auto max-h-screen pb-16;
+  }
+  
+  /* Make sure containers don't cut off content */
+  .overflow-container {
+    @apply overflow-y-auto;
+    max-height: 100%;
   }
 }

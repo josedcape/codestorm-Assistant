@@ -22,11 +22,11 @@ const Home: React.FC = () => {
   const [terminalVisible, setTerminalVisible] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isMobile = useIsMobile();
-  
+
   // Simulación de inicio de proyecto
   const projectInitializedRef = useRef(false);
   const { startNewProject } = useAppContext();
-  
+
   useEffect(() => {
     if (!projectInitializedRef.current) {
       projectInitializedRef.current = true;
@@ -36,15 +36,15 @@ const Home: React.FC = () => {
       }
     }
   }, [startNewProject]);
-  
+
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
-  
+
   const toggleAssistant = () => {
     setAssistantOpen(!assistantOpen);
   };
-  
+
   // Handle responsive behavior
   useEffect(() => {
     const handleResize = () => {
@@ -54,28 +54,28 @@ const Home: React.FC = () => {
         setSidebarOpen(false);
       }
     };
-    
+
     window.addEventListener('resize', handleResize);
     handleResize(); // Initial check
-    
+
     return () => {
       window.removeEventListener('resize', handleResize);
     };
   }, []);
-  
+
   // Simulación de abrir un archivo
   const handleOpenFile = (path: string, name: string) => {
     console.log(`Abriendo archivo ${name} en ${path}`);
   };
-  
+
   return (
     <EditorProvider>
-      <div className="h-screen flex flex-col bg-slate-950 text-white overflow-hidden">
+      <div className="h-screen flex flex-col bg-slate-950 text-white overflow-hidden min-h-screen overflow-y-auto">
         <Header 
           toggleFileExplorer={toggleSidebar} 
           toggleAIAssistant={toggleAssistant}
         />
-        
+
         <div className="flex flex-1 overflow-hidden">
           {/* Explorador de archivos */}
           {sidebarOpen && !isMobile && (
@@ -88,12 +88,12 @@ const Home: React.FC = () => {
               <FileExplorer onOpenFile={handleOpenFile} />
             </motion.div>
           )}
-          
+
           {/* Editor de código (centro) */}
           <div className="flex-grow overflow-hidden">
             <EditorContainer />
           </div>
-          
+
           {/* Panel del asistente (derecha) */}
           <AnimatePresence>
             {assistantOpen && !isMobile && (
@@ -104,7 +104,7 @@ const Home: React.FC = () => {
             )}
           </AnimatePresence>
         </div>
-        
+
         {/* Barra de estado */}
         <StatusBar 
           showTerminal={terminalVisible}
@@ -113,7 +113,7 @@ const Home: React.FC = () => {
           line={10}
           column={25}
         />
-        
+
         {/* UI Móvil */}
         {isMobile && (
           <>
@@ -136,7 +136,7 @@ const Home: React.FC = () => {
                 />
               </SheetContent>
             </Sheet>
-            
+
             {/* Botón flotante para mostrar asistente en móvil */}
             <Button 
               className="fixed bottom-6 right-6 h-12 w-12 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg"
@@ -144,7 +144,7 @@ const Home: React.FC = () => {
             >
               {assistantOpen ? <X size={20} /> : <Bot size={20} />}
             </Button>
-            
+
             {/* Panel de asistente en modo móvil */}
             <AnimatePresence>
               {assistantOpen && isMobile && (
