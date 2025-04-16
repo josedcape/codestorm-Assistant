@@ -66,7 +66,7 @@ const Header: React.FC<HeaderProps> = ({
             <RobotLogo />
           </motion.div>
           <motion.h1 
-            className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 text-transparent bg-clip-text"
+            className="text-xl font-bold futuristic-title"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}

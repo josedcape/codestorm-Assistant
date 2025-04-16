@@ -30,7 +30,7 @@ function App() {
       radial-gradient(circle at 80% 80%, rgba(14, 42, 71, 0.4) 0%, transparent 40%)
     `;
     body.style.minHeight = "100vh";
-    body.style.overflowX = "hidden";
+    body.style.overflowX = "auto";
   }, []);
 
   return (

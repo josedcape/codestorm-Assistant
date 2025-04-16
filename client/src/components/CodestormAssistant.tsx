@@ -189,7 +189,7 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
           {/* Mensajes */}
           <div 
             ref={chatContainerRef}
-            className="flex-1 overflow-y-auto py-2 space-y-4"
+            className="flex-1 overflow-y-auto py-2 space-y-4 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-slate-900"
           >
             {!hasMessages ? (
               <div className="flex flex-col items-center justify-center h-full text-slate-400 text-sm px-4 text-center">
