@@ -5,7 +5,7 @@ import axios from 'axios';
 async function generateOpenAIResponse(prompt: string, code?: string, agentType?: string) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    throw new Error('OpenAI API key no configurada');
+    throw new Error('❌ API key de OpenAI no configurada. Por favor, configura tu clave API en la sección de Secrets.');
   }
 
   // Seleccionar el sistema de instrucciones según el tipo de agente
