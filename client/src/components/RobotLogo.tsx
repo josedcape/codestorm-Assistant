@@ -3,71 +3,61 @@ import { motion } from 'framer-motion';
 
 export function RobotLogo() {
   return (
-    <motion.div 
-      className="w-12 h-12 bg-blue-900 flex items-center justify-center relative"
-      style={{
-        clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)'
+    <motion.svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className="text-white"
+      initial={{ opacity: 0.8 }}
+      animate={{ 
+        opacity: [0.8, 1, 0.8],
+        scale: [1, 1.05, 1]
       }}
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ 
-        type: "spring",
-        stiffness: 260,
-        damping: 20
+      transition={{
+        duration: 2,
+        repeat: Infinity,
+        repeatType: "reverse"
       }}
     >
-      <motion.svg 
-        width="32" 
-        height="32" 
-        viewBox="0 0 100 100" 
-        fill="none" 
-        xmlns="http://www.w3.org/2000/svg"
+      <motion.path
+        d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM7 13.5C6.17 13.5 5.5 12.83 5.5 12C5.5 11.17 6.17 10.5 7 10.5C7.83 10.5 8.5 11.17 8.5 12C8.5 12.83 7.83 13.5 7 13.5ZM12 13.5C11.17 13.5 10.5 12.83 10.5 12C10.5 11.17 11.17 10.5 12 10.5C12.83 10.5 13.5 11.17 13.5 12C13.5 12.83 12.83 13.5 12 13.5ZM17 13.5C16.17 13.5 15.5 12.83 15.5 12C15.5 11.17 16.17 10.5 17 10.5C17.83 10.5 18.5 11.17 18.5 12C18.5 12.83 17.83 13.5 17 13.5Z"
+        fill="currentColor"
+        initial={{ pathLength: 0 }}
+        animate={{ pathLength: 1 }}
+        transition={{
+          duration: 2,
+          ease: "easeInOut",
+          repeat: Infinity,
+          repeatType: "loop",
+          repeatDelay: 1
+        }}
+      />
+      <motion.path
+        d="M17 9C17.5523 9 18 8.55228 18 8C18 7.44772 17.5523 7 17 7C16.4477 7 16 7.44772 16 8C16 8.55228 16.4477 9 17 9Z"
+        fill="#4BE3EB"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.3, duration: 0.5 }}
-      >
-        {/* Robot Head */}
-        <motion.path 
-          d="M50 15C40 15 30 25 30 35V65C30 75 40 85 50 85C60 85 70 75 70 65V35C70 25 60 15 50 15Z" 
-          fill="#E0E0E0"
-          stroke="#00AEFF"
-          strokeWidth="2"
-          initial={{ pathLength: 0 }}
-          animate={{ pathLength: 1 }}
-          transition={{ duration: 1, delay: 0.5 }}
-        />
-        
-        {/* Robot Eye */}
-        <motion.circle 
-          cx="50" 
-          cy="40" 
-          r="10" 
-          fill="#00AEFF"
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ duration: 0.5, delay: 1 }}
-        />
-        
-        {/* Robot Chest Light */}
-        <motion.path 
-          d="M47 60L53 60L50 70Z" 
-          fill="#00AEFF"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 1.2 }}
-        />
-        
-        {/* Glow Effect */}
-        <motion.circle 
-          cx="50" 
-          cy="40" 
-          r="6" 
-          fill="#FFFFFF"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: [0, 0.8, 0] }}
-          transition={{ duration: 2, repeat: Infinity, repeatType: "reverse" }}
-        />
-      </motion.svg>
-    </motion.div>
+        transition={{
+          duration: 0.5,
+          delay: 1,
+          repeat: Infinity,
+          repeatType: "reverse"
+        }}
+      />
+      <motion.path
+        d="M7 9C7.55228 9 8 8.55228 8 8C8 7.44772 7.55228 7 7 7C6.44772 7 6 7.44772 6 8C6 8.55228 6.44772 9 7 9Z"
+        fill="#4BE3EB"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{
+          duration: 0.5,
+          delay: 1.2,
+          repeat: Infinity,
+          repeatType: "reverse"
+        }}
+      />
+    </motion.svg>
   );
 }

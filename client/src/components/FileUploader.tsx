@@ -1,18 +1,18 @@
 import React, { useState, useRef } from 'react';
-import { Upload, File as FileIcon, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Upload, X, FileText, File, AlertCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface FileUploaderProps {
   onFileUploaded: (file: File, content: string) => void;
 }
 
-const FileUploader: React.FC<FileUploaderProps> = ({ onFileUploaded }) => {
+export default function FileUploader({ onFileUploaded }: FileUploaderProps) {
   const [dragActive, setDragActive] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
-  
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -25,44 +25,71 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onFileUploaded }) => {
     }
   };
 
-  const processFile = async (file: File) => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const content = await readFileContent(file);
-      setSelectedFile(file);
-      onFileUploaded(file, content);
-    } catch (err) {
-      setError('Error al leer el archivo. Intenta de nuevo.');
-      console.error('Error al leer el archivo:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
     
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const file = e.dataTransfer.files[0];
-      processFile(file);
+      processFile(e.dataTransfer.files[0]);
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    e.preventDefault();
-    
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      const file = e.target.files[0];
-      processFile(file);
+      processFile(e.target.files[0]);
     }
   };
 
   const handleButtonClick = () => {
-    fileInputRef.current?.click();
+    inputRef.current?.click();
+  };
+
+  const processFile = async (file: File) => {
+    setError(null);
+    
+    // Validar tipo de archivo
+    const validTypes = ['text/plain', 'text/javascript', 'application/javascript', 
+      'application/json', 'text/html', 'text/css', 'text/typescript', 
+      'application/typescript', 'text/markdown'];
+    
+    // También permitir archivos por extensión para sistema operativos que no detectan bien el MIME type
+    const validExtensions = ['.js', '.jsx', '.ts', '.tsx', '.html', '.css', '.json', '.md', '.txt', '.py'];
+    const fileExtension = '.' + file.name.split('.').pop();
+    
+    const isValidType = validTypes.includes(file.type) || 
+                        validExtensions.some(ext => fileExtension.toLowerCase() === ext);
+    
+    if (!isValidType) {
+      setError('Tipo de archivo no soportado. Por favor sube un archivo de texto o código.');
+      return;
+    }
+    
+    // Validar tamaño (máx. 1MB)
+    if (file.size > 1024 * 1024) {
+      setError('El archivo es demasiado grande. Límite: 1MB');
+      return;
+    }
+    
+    try {
+      setIsLoading(true);
+      setFile(file);
+      
+      // Leer contenido del archivo
+      const content = await readFileContent(file);
+      
+      // Llamar callback
+      onFileUploaded(file, content);
+      
+      // Reiniciar
+      setFile(null);
+      if (inputRef.current) inputRef.current.value = '';
+    } catch (err) {
+      console.error('Error al procesar archivo:', err);
+      setError('No se pudo leer el archivo. Intenta con otro archivo.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const readFileContent = (file: File): Promise<string> => {
@@ -70,105 +97,117 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onFileUploaded }) => {
       const reader = new FileReader();
       
       reader.onload = (event) => {
-        if (event.target && typeof event.target.result === 'string') {
-          resolve(event.target.result);
+        if (event.target?.result) {
+          resolve(event.target.result as string);
         } else {
-          reject(new Error('Error al leer el contenido del archivo'));
+          reject(new Error('Error al leer el archivo.'));
         }
       };
       
       reader.onerror = () => {
-        reject(reader.error);
+        reject(new Error('Error al leer el archivo.'));
       };
       
       reader.readAsText(file);
     });
   };
 
-  const clearSelection = () => {
-    setSelectedFile(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  const getFileExtension = (filename: string) => {
-    return filename.slice((filename.lastIndexOf('.') - 1 >>> 0) + 2);
+  const cancelUpload = () => {
+    setFile(null);
+    setError(null);
+    if (inputRef.current) inputRef.current.value = '';
   };
 
   return (
-    <div className="border border-muted rounded-md p-4">
-      <h3 className="text-primary mb-2 font-semibold">Carga de Archivos</h3>
+    <div className="flex flex-col">
+      <h3 className="font-medium text-sm mb-3">Subir Archivo</h3>
       
-      {!selectedFile ? (
-        <div 
-          className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-            dragActive 
-              ? 'border-blue-500 bg-blue-900 bg-opacity-20' 
-              : 'border-muted hover:border-muted-foreground'
-          }`}
-          onDragEnter={handleDrag}
-          onDragOver={handleDrag}
-          onDragLeave={handleDrag}
-          onDrop={handleDrop}
-        >
-          <input
-            ref={fileInputRef}
-            type="file"
-            className="hidden"
-            onChange={handleChange}
-            accept=".js,.html,.css,.json,.ts,.tsx,.py,.java,.c,.cpp,.cs,.go,.rb,.php,.md,.txt"
-          />
-          
-          <div className="flex flex-col items-center justify-center space-y-2">
-            <Upload size={36} className="text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">
-              Arrastra un archivo o haz clic para seleccionarlo
-            </p>
-            <Button 
-              onClick={handleButtonClick}
-              className="mt-2"
-              disabled={isLoading}
+      <input
+        ref={inputRef}
+        type="file"
+        className="hidden"
+        onChange={handleFileChange}
+        accept=".js,.jsx,.ts,.tsx,.html,.css,.json,.md,.txt,.py"
+      />
+      
+      <div
+        className={`
+          border-2 border-dashed rounded-md p-4 transition-colors text-center
+          ${dragActive ? 'border-blue-500 bg-blue-500/10' : 'border-slate-700'}
+          ${error ? 'border-red-500' : ''}
+        `}
+        onDragEnter={handleDrag}
+        onDragOver={handleDrag}
+        onDragLeave={handleDrag}
+        onDrop={handleDrop}
+      >
+        <AnimatePresence mode="wait">
+          {file ? (
+            <motion.div
+              key="file"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex flex-col items-center"
             >
-              {isLoading ? 'Cargando...' : 'Seleccionar Archivo'}
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <div className="bg-card p-3 rounded-md border border-muted">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <FileIcon size={24} className="text-blue-500" />
-              <div>
-                <p className="font-medium">{selectedFile.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {(selectedFile.size / 1024).toFixed(1)} KB • {getFileExtension(selectedFile.name)}
-                </p>
-              </div>
-            </div>
-            <button 
-              onClick={clearSelection}
-              className="p-1 hover:bg-muted rounded"
+              <FileText size={36} className="mb-2 text-blue-400" />
+              <p className="text-sm mb-1">{file.name}</p>
+              <p className="text-xs text-slate-400 mb-3">
+                {(file.size / 1024).toFixed(2)} KB
+              </p>
+              
+              {isLoading ? (
+                <motion.div 
+                  className="h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full"
+                  animate={{ rotate: 360 }}
+                  transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                />
+              ) : (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={cancelUpload}
+                  className="gap-1"
+                >
+                  <X size={14} />
+                  Cancelar
+                </Button>
+              )}
+            </motion.div>
+          ) : (
+            <motion.div
+              key="upload"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex flex-col items-center py-4"
             >
-              <X size={18} />
-            </button>
-          </div>
-          
-          <div className="mt-3">
-            <p className="text-xs text-muted-foreground">
-              Archivo cargado correctamente. Puedes proceder a utilizarlo en tu proyecto.
-            </p>
-          </div>
-        </div>
-      )}
+              <Upload size={36} className="mb-2 text-slate-500" />
+              <p className="text-sm mb-1">
+                Arrastra un archivo aquí o
+              </p>
+              <Button 
+                variant="default" 
+                size="sm" 
+                onClick={handleButtonClick}
+                className="mt-2"
+              >
+                Seleccionar archivo
+              </Button>
+              <p className="text-xs text-slate-500 mt-3">
+                Formatos: .js, .jsx, .ts, .tsx, .html, .css, .json, .md, .txt, .py
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
       
       {error && (
-        <div className="mt-2 text-sm text-red-500">
-          {error}
+        <div className="flex items-center text-red-500 text-sm mt-2">
+          <AlertCircle size={14} className="mr-1 flex-shrink-0" />
+          <span>{error}</span>
         </div>
       )}
     </div>
   );
-};
-
-export default FileUploader;
+}
