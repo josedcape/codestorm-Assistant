@@ -196,19 +196,6 @@ export default function FileExplorer({
     }
   };
 
-  const handleDeleteFile = async (file: {path: string; name: string; id?: string}) => {
-    if (!file.id) return;
-
-    if (confirm(`¿Estás seguro que deseas eliminar ${file.name}?`)) {
-      try {
-        await deleteFile(file.id);
-        toast(`Archivo ${file.name} eliminado`);
-        handleRefresh();
-      } catch (error) {
-        console.error('Error deleting file:', error);
-      }
-    }
-  };
 
   const handleDownloadFile = async (file: {path: string; name: string; id?: string}) => {
     if (!file.id) return;
@@ -399,20 +386,6 @@ export default function FileExplorer({
     };
 
     return extToLanguage[extension] || 'text';
-  };
-
-  const handleDeleteFile = async (file: {path: string; name: string; id?: string}) => {
-    if (!file.id) return;
-
-    if (confirm(`¿Estás seguro que deseas eliminar ${file.name}?`)) {
-      try {
-        await deleteFile(file.id);
-        toast(`Archivo ${file.name} eliminado`);
-        handleRefresh();
-      } catch (error) {
-        console.error('Error deleting file:', error);
-      }
-    }
   };
 
 
