@@ -6,9 +6,10 @@ async function generateOpenAIResponse(
   prompt: string,
   code?: string,
   agentType?: string,
+  apiKey?: string,
 ) {
-  const apiKey = process.env.OPENAI_API_KEY || req.headers['x-openai-key'];
-  if (!apiKey) {
+  const openaiKey = apiKey || process.env.OPENAI_API_KEY;
+  if (!openaiKey) {
     throw new Error(
       "❌ API key de OpenAI no configurada. Por favor, configura tu clave API en la configuración.",
     );
@@ -68,8 +69,8 @@ Responde siempre en español y ofrece soluciones técnicas avanzadas con ejemplo
     console.log("Enviando solicitud a OpenAI...");
     
     // Verificar que la clave API sea válida
-    if (!apiKey || apiKey === 'your-openai-api-key' || apiKey.startsWith('sk-proj-')) {
-      throw new Error('La clave API de OpenAI no es válida. Por favor, configura una clave válida en el archivo .env');
+    if (!openaiKey || openaiKey === 'your-openai-api-key' || openaiKey.startsWith('sk-proj-')) {
+      throw new Error('La clave API de OpenAI no es válida. Por favor, configura una clave válida');
     }
 
     const response = await axios.post(
@@ -83,7 +84,7 @@ Responde siempre en español y ofrece soluciones técnicas avanzadas con ejemplo
       {
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`,
+          "Authorization": `Bearer ${openaiKey}`,
         },
       },
     );
@@ -263,7 +264,7 @@ export async function handleAIGenerate(req: Request, res: Response) {
               .status(400)
               .json({ error: "API key de OpenAI no configurada" });
           }
-          response = await generateOpenAIResponse(prompt, code, agentType);
+          response = await generateOpenAIResponse(prompt, code, agentType, openaiKey.toString());
           break;
         case "gemini-2.5":
           if (!geminiKey) {
