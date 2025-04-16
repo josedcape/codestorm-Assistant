@@ -5,7 +5,11 @@ import { insertFileSchema } from "@shared/schema";
 import { z } from "zod";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
-import { handleAIGenerate, handleTerminalExecute } from "./ai";
+import { handleAIGenerate, handleTerminalExecute, handleCodeCorrection } from "./ai";
+import multer from 'multer';
+import { exec } from 'child_process';
+import fs from 'fs';
+import path from 'path';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Get all files
@@ -112,17 +116,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/run", (req, res) => {
     try {
       const { code, language } = req.body;
-      
+
       if (!code || !language) {
         return res.status(400).json({ 
           error: "Both code and language are required" 
         });
       }
-      
+
       // For security reasons, this is just a mock implementation
       // Real implementation would use a proper sandbox
       let output = "";
-      
+
       switch (language) {
         case "javascript":
           output = "JavaScript execution output would appear here";
@@ -133,7 +137,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         default:
           output = `Execution for ${language} is not supported yet`;
       }
-      
+
       res.json({ output });
     } catch (error) {
       res.status(500).json({ error: "Failed to execute code" });
@@ -141,14 +145,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
 
-  // Middleware para manejo de archivos
-  import multer from 'multer';
-  import { exec } from 'child_process';
-  import fs from 'fs';
-  import path from 'path';
-  
   // Configuración de multer para la carga de archivos
-  const storage = multer.diskStorage({
+  const storageMulter = multer.diskStorage({
     destination: function (req, file, cb) {
       const tempDir = '/tmp/uploads';
       if (!fs.existsSync(tempDir)) {
@@ -160,38 +158,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       cb(null, Date.now() + '-' + file.originalname);
     }
   });
-  
-  const upload = multer({ storage: storage });
-  
+
+  const upload = multer({ storage: storageMulter });
+
   // Ruta para subir y descomprimir archivos ZIP
   app.post('/api/upload-zip', upload.single('zipFile'), (req, res) => {
     if (!req.file) {
       return res.status(400).json({ error: 'No se ha proporcionado ningún archivo' });
     }
-    
+
     const zipPath = req.file.path;
     const extractPath = '/home/runner/workspace';
-    
+
     // Crear directorio temporal para la extracción
     const tempExtractDir = '/tmp/extract';
     if (!fs.existsSync(tempExtractDir)) {
       fs.mkdirSync(tempExtractDir, { recursive: true });
     }
-    
+
     // Descomprimir el archivo
     exec(`unzip -o "${zipPath}" -d "${tempExtractDir}"`, (error, stdout, stderr) => {
       if (error) {
         console.error(`Error descomprimiendo el archivo: ${error.message}`);
         return res.status(500).json({ error: 'Error al descomprimir el archivo' });
       }
-      
+
       // Copiar archivos al directorio de trabajo
       exec(`cp -r "${tempExtractDir}"/* "${extractPath}"`, (cpError, cpStdout, cpStderr) => {
         if (cpError) {
           console.error(`Error copiando archivos: ${cpError.message}`);
           return res.status(500).json({ error: 'Error al copiar los archivos descomprimidos' });
         }
-        
+
         // Limpiar archivos temporales
         exec(`rm -rf "${zipPath}" "${tempExtractDir}"`, () => {
           res.json({ success: true, message: 'Archivo descomprimido correctamente' });
@@ -201,8 +199,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // API endpoints para IA
-  app.post("/api/ai/generate", handleAIGenerate);
-  
+  app.post("/api/ai/generate", async (req, res) => {
+    await handleAIGenerate(req, res);
+  });
+
+  // Ruta para corrección de código
+  app.post('/api/correct', async (req, res) => {
+    await handleCodeCorrection(req, res);
+  });
+
   // API endpoint para ejecución de comandos de terminal
   app.post("/api/terminal/execute", handleTerminalExecute);
 

@@ -99,6 +99,17 @@ interface AppContextType {
   createFile: (file: Partial<FileInfo>) => Promise<void>;
   refreshFiles: () => Promise<void>;
 
+  // Code Correction Modal
+  isCodeCorrectionModalOpen: boolean;
+  selectedFileForCorrection: {
+    name: string;
+    content: string;
+    path: string;
+    language: string;
+  } | null;
+  openCodeCorrectionModal: (file: { name: string; content: string; path: string; language: string }) => void;
+  closeCodeCorrectionModal: () => void;
+  applyCodeCorrection: (path: string, content: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -138,6 +149,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [showTerminal, setShowTerminal] = useState(false);
   const [isTerminalMaximized, setIsTerminalMaximized] = useState(true);
 
+  // Code Correction Modal State
+  const [isCodeCorrectionModalOpen, setIsCodeCorrectionModalOpen] = useState(false);
+  const [selectedFileForCorrection, setSelectedFileForCorrection] = useState<{
+    name: string;
+    content: string;
+    path: string;
+    language: string;
+  } | null>(null);
 
   // Terminal functions
   const addTerminalLine = (line: TerminalLine) => {
@@ -382,6 +401,30 @@ class App {
     }
   };
 
+  // Code Correction Modal Functions
+  const openCodeCorrectionModal = (file: { name: string; content: string; path: string; language: string }) => {
+    setSelectedFileForCorrection(file);
+    setIsCodeCorrectionModalOpen(true);
+  };
+
+  const closeCodeCorrectionModal = () => {
+    setIsCodeCorrectionModalOpen(false);
+    setSelectedFileForCorrection(null);
+  };
+
+  const applyCodeCorrection = async (path: string, content: string): Promise<void> => {
+    // Placeholder: Replace with actual file update logic
+    try {
+      console.log(`Aplicando correcciones al archivo: ${path}`);
+      //  Implement your file update logic here.  Example using the existing updateFile function (assuming it exists and takes a path and content):
+      // await updateFile(path, {content}); //this is  a placeholder
+      return Promise.resolve();
+    } catch (error) {
+      console.error('Error al aplicar correcciones:', error);
+      return Promise.reject(error);
+    }
+  };
+
 
   return (
     <AppContext.Provider
@@ -429,7 +472,12 @@ class App {
         updateFile,
         deleteFile,
         createFile,
-        refreshFiles
+        refreshFiles,
+        isCodeCorrectionModalOpen,
+        selectedFileForCorrection,
+        openCodeCorrectionModal,
+        closeCodeCorrectionModal,
+        applyCodeCorrection
       }}
     >
       {children}

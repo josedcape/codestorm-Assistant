@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
@@ -33,6 +32,7 @@ import {
   FileArchive
 } from 'lucide-react';
 import axios from 'axios';
+import { Code } from 'lucide-react'; // Import the Code icon
 
 interface FileExplorerProps {
   files?: { path: string; name: string; id?: string }[];
@@ -66,9 +66,9 @@ export default function FileExplorer({
   const [importRepoUrl, setImportRepoUrl] = useState('');
   const [showImportDialog, setShowImportDialog] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
-  const { currentProject, updateFile, deleteFile } = useAppContext();
-  
+
+  const { currentProject, updateFile, deleteFile, openCodeCorrectionModal } = useAppContext();
+
   // Simular datos si no hay archivos proporcionados
   const projectFiles = currentProject?.files || [
     {
@@ -93,34 +93,34 @@ export default function FileExplorer({
       content: '',
     }
   ];
-  
+
   const mockFolders = [
     { path: '/src', name: 'src', expanded: true },
     { path: '/public', name: 'public', expanded: false },
     { path: '/assets', name: 'assets', expanded: false },
   ];
-  
+
   const effectiveFiles = files.length > 0 ? files : projectFiles.map(file => ({
     path: file.path || '',
     name: file.name,
     id: file.id
   }));
-  
+
   const effectiveFolders = folders.length > 0 ? folders : mockFolders;
-  
+
   const toggleFolder = (path: string) => {
     setExpandedFolders(prev => ({
       ...prev,
       [path]: !prev[path]
     }));
   };
-  
+
   const handleFileClick = (path: string, name: string, id?: string) => {
     if (onOpenFile) {
       onOpenFile(path, name, id);
     }
   };
-  
+
   const handleRefresh = async () => {
     if (onRefresh) {
       setIsLoading(true);
@@ -131,10 +131,10 @@ export default function FileExplorer({
       }
     }
   };
-  
+
   const handleCreateNewFile = async () => {
     if (!newFileName.trim() || !onCreateFile) return;
-    
+
     setIsLoading(true);
     try {
       const success = await onCreateFile(newFileName, '');
@@ -149,10 +149,10 @@ export default function FileExplorer({
       setIsLoading(false);
     }
   };
-  
+
   const handleCreateNewFolder = async () => {
     if (!newFolderName.trim() || !onCreateFolder) return;
-    
+
     setIsLoading(true);
     try {
       const success = await onCreateFolder(newFolderName);
@@ -167,7 +167,7 @@ export default function FileExplorer({
       setIsLoading(false);
     }
   };
-  
+
   const handleEditFile = async (file: {path: string; name: string; id?: string}) => {
     setSelectedFile(file);
     try {
@@ -180,10 +180,10 @@ export default function FileExplorer({
       console.error('Error loading file content:', error);
     }
   };
-  
+
   const handleSaveEdit = async () => {
     if (!selectedFile || !selectedFile.id) return;
-    
+
     setIsLoading(true);
     try {
       await updateFile(selectedFile.id, { content: editedContent });
@@ -195,10 +195,10 @@ export default function FileExplorer({
       setIsLoading(false);
     }
   };
-  
+
   const handleDeleteFile = async (file: {path: string; name: string; id?: string}) => {
     if (!file.id) return;
-    
+
     if (confirm(`¿Estás seguro que deseas eliminar ${file.name}?`)) {
       try {
         await deleteFile(file.id);
@@ -209,14 +209,14 @@ export default function FileExplorer({
       }
     }
   };
-  
+
   const handleDownloadFile = async (file: {path: string; name: string; id?: string}) => {
     if (!file.id) return;
-    
+
     try {
       const response = await axios.get(`/api/files/${file.id}`);
       const content = response.data.content || '';
-      
+
       // Crear un blob y descargarlo
       const blob = new Blob([content], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);
@@ -231,28 +231,28 @@ export default function FileExplorer({
       console.error('Error downloading file:', error);
     }
   };
-  
+
   const handleUploadFile = () => {
     fileInputRef.current?.click();
   };
-  
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
-    
+
     setIsLoading(true);
     try {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const reader = new FileReader();
-        
+
         reader.onload = async (e) => {
           const content = e.target?.result as string;
           if (onCreateFile) {
             await onCreateFile(file.name, content);
           }
         };
-        
+
         reader.readAsText(file);
       }
       handleRefresh();
@@ -266,17 +266,17 @@ export default function FileExplorer({
       }
     }
   };
-  
+
   const handleImportRepository = async () => {
     if (!importRepoUrl.trim()) return;
-    
+
     setIsLoading(true);
     try {
       // Enviar petición al servidor para importar el repositorio
       await axios.post('/api/terminal/execute', {
         command: `mkdir -p /tmp/repo && cd /tmp/repo && git clone ${importRepoUrl} . && cp -r . /home/runner/workspace && rm -rf /tmp/repo`
       });
-      
+
       setImportRepoUrl('');
       setShowImportDialog(false);
       toast('Repositorio importado correctamente');
@@ -287,28 +287,28 @@ export default function FileExplorer({
       setIsLoading(false);
     }
   };
-  
+
   const handleImportZip = async () => {
     fileInputRef.current?.click();
   };
-  
+
   const handleZipUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
-    
+
     setIsLoading(true);
     try {
       // Usar FormData para subir el archivo zip
       const formData = new FormData();
       formData.append('zipFile', files[0]);
-      
+
       // Enviar el archivo al servidor
       await axios.post('/api/upload-zip', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
-      
+
       toast('Archivo ZIP importado correctamente');
       handleRefresh();
     } catch (error) {
@@ -321,19 +321,19 @@ export default function FileExplorer({
       }
     }
   };
-  
+
   // Función para mostrar notificaciones toast (simplificada)
   const toast = (message: string) => {
     console.log(message);
     // Aquí implementaríamos una notificación real
   };
-  
+
   // Filtrar archivos basado en búsqueda
   const filteredFiles = searchQuery 
     ? effectiveFiles.filter(file => 
         file.name.toLowerCase().includes(searchQuery.toLowerCase()))
     : effectiveFiles;
-    
+
   const filteredFolders = searchQuery
     ? effectiveFolders.filter(folder => 
         folder.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -342,6 +342,79 @@ export default function FileExplorer({
           file.path.startsWith(folder.path) && 
           file.name.toLowerCase().includes(searchQuery.toLowerCase())))
     : effectiveFolders;
+
+  const handleCorrectFile = (path: string) => {
+    const file = getFileByPath(path);
+    if (file) {
+      const fileContent = getFileContent(file.path); // Replace with actual content retrieval
+      if (fileContent) {
+        openCodeCorrectionModal({
+          name: file.name,
+          content: fileContent,
+          path: file.path,
+          language: getLanguageFromFileName(file.name)
+        });
+      }
+    }
+  };
+
+  const getFileByPath = (path: string) => {
+    // Implementar según la estructura de datos de tu aplicación
+    // Ejemplo simple:  This needs to be replaced with your actual file retrieval logic.
+    return effectiveFiles.find(file => file.path === path) || { name: path.split('/').pop() || '', path: path };
+  };
+
+  const getFileContent = (path: string) => {
+    // Implementar según tu estructura
+    // Este es un ejemplo, ajústalo según tu implementación actual
+    const file = getFileByPath(path);
+    return file.path; // Replace with actual content retrieval logic.  This is a placeholder.
+  };
+
+  const getLanguageFromFileName = (filename: string): string => {
+    const extension = filename.split('.').pop()?.toLowerCase() || '';
+
+    const extToLanguage: Record<string, string> = {
+      'js': 'javascript',
+      'ts': 'typescript',
+      'jsx': 'javascript',
+      'tsx': 'typescript',
+      'html': 'html',
+      'css': 'css',
+      'scss': 'scss',
+      'sass': 'sass',
+      'json': 'json',
+      'py': 'python',
+      'rb': 'ruby',
+      'php': 'php',
+      'java': 'java',
+      'c': 'c',
+      'cpp': 'cpp',
+      'cs': 'csharp',
+      'go': 'go',
+      'rs': 'rust',
+      'swift': 'swift',
+      'kt': 'kotlin',
+      'md': 'markdown'
+    };
+
+    return extToLanguage[extension] || 'text';
+  };
+
+  const handleDeleteFile = async (file: {path: string; name: string; id?: string}) => {
+    if (!file.id) return;
+
+    if (confirm(`¿Estás seguro que deseas eliminar ${file.name}?`)) {
+      try {
+        await deleteFile(file.id);
+        toast(`Archivo ${file.name} eliminado`);
+        handleRefresh();
+      } catch (error) {
+        console.error('Error deleting file:', error);
+      }
+    }
+  };
+
 
   return (
     <div className="w-60 bg-slate-900 border-r border-slate-800 h-full overflow-hidden flex flex-col">
@@ -368,7 +441,7 @@ export default function FileExplorer({
               <TooltipContent>Actualizar</TooltipContent>
             </Tooltip>
           </TooltipProvider>
-          
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-7 w-7">
@@ -401,7 +474,7 @@ export default function FileExplorer({
           </DropdownMenu>
         </div>
       </div>
-      
+
       {/* Barra de búsqueda */}
       <div className="p-2 border-b border-slate-800">
         <div className="relative">
@@ -422,7 +495,7 @@ export default function FileExplorer({
           )}
         </div>
       </div>
-      
+
       {/* Área para crear nuevo archivo/carpeta */}
       <AnimatePresence>
         {showNewFileInput && (
@@ -459,7 +532,7 @@ export default function FileExplorer({
             </div>
           </motion.div>
         )}
-        
+
         {showNewFolderInput && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
@@ -495,7 +568,7 @@ export default function FileExplorer({
           </motion.div>
         )}
       </AnimatePresence>
-      
+
       {/* Estructura de archivos */}
       <ScrollArea className="flex-grow overflow-y-auto p-1">
         {filteredFolders.length === 0 && filteredFiles.length === 0 ? (
@@ -511,12 +584,12 @@ export default function FileExplorer({
             {/* Carpetas */}
             {filteredFolders.map((folder) => {
               const isExpanded = expandedFolders[folder.path] ?? folder.expanded;
-              
+
               // Obtener los archivos que están en esta carpeta
               const filesInFolder = filteredFiles.filter(file => 
                 file.path.startsWith(folder.path + '/')
               );
-              
+
               return (
                 <div key={folder.path} className="mb-1">
                   <div
@@ -533,7 +606,7 @@ export default function FileExplorer({
                     <Folder size={14} className="mr-1.5 text-blue-400" />
                     <span>{folder.name}</span>
                   </div>
-                  
+
                   {/* Archivos dentro de la carpeta */}
                   {isExpanded && filesInFolder.length > 0 && (
                     <div className="ml-6">
@@ -550,24 +623,34 @@ export default function FileExplorer({
                             <span>{file.name}</span>
                           </div>
                           <div className="hidden group-hover:flex items-center">
-                            <button 
-                              className="p-1 text-slate-400 hover:text-white"
-                              onClick={() => handleEditFile(file)}
-                            >
-                              <Edit size={12} />
-                            </button>
-                            <button 
-                              className="p-1 text-slate-400 hover:text-white"
-                              onClick={() => handleDownloadFile(file)}
-                            >
-                              <Download size={12} />
-                            </button>
-                            <button 
-                              className="p-1 text-slate-400 hover:text-red-500"
-                              onClick={() => handleDeleteFile(file)}
-                            >
-                              <Trash2 size={12} />
-                            </button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button className="p-1 text-slate-400 hover:text-white">
+                                  <span className="sr-only">More</span>
+                                  <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                                  </svg>
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent>
+                                <DropdownMenuItem onClick={() => handleEditFile(file)}>
+                                  <Edit className="mr-2 h-4 w-4" />
+                                  <span>Editar</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleCorrectFile(file.path)}>
+                                  <Code className="mr-2 h-4 w-4" />
+                                  <span>Corregir código</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleDownloadFile(file)}>
+                                  <Download className="mr-2 h-4 w-4" />
+                                  <span>Descargar</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleDeleteFile(file)}>
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  <span>Eliminar</span>
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                         </div>
                       ))}
@@ -576,7 +659,7 @@ export default function FileExplorer({
                 </div>
               );
             })}
-            
+
             {/* Archivos en la raíz */}
             {filteredFiles.filter(file => {
               // Solo mostrar archivos que no están en ninguna carpeta conocida
@@ -594,31 +677,41 @@ export default function FileExplorer({
                   <span>{file.name}</span>
                 </div>
                 <div className="hidden group-hover:flex items-center">
-                  <button 
-                    className="p-1 text-slate-400 hover:text-white"
-                    onClick={() => handleEditFile(file)}
-                  >
-                    <Edit size={12} />
-                  </button>
-                  <button 
-                    className="p-1 text-slate-400 hover:text-white"
-                    onClick={() => handleDownloadFile(file)}
-                  >
-                    <Download size={12} />
-                  </button>
-                  <button 
-                    className="p-1 text-slate-400 hover:text-red-500"
-                    onClick={() => handleDeleteFile(file)}
-                  >
-                    <Trash2 size={12} />
-                  </button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="p-1 text-slate-400 hover:text-white">
+                        <span className="sr-only">More</span>
+                        <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                          <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                        </svg>
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuItem onClick={() => handleEditFile(file)}>
+                        <Edit className="mr-2 h-4 w-4" />
+                        <span>Editar</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleCorrectFile(file.path)}>
+                        <Code className="mr-2 h-4 w-4" />
+                        <span>Corregir código</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleDownloadFile(file)}>
+                        <Download className="mr-2 h-4 w-4" />
+                        <span>Descargar</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleDeleteFile(file)}>
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        <span>Eliminar</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             ))}
           </>
         )}
       </ScrollArea>
-      
+
       {/* File Upload Input (hidden) */}
       <input 
         type="file" 
@@ -627,7 +720,7 @@ export default function FileExplorer({
         onChange={handleFileUpload}
         multiple
       />
-      
+
       {/* Dialog para editar archivo */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
         <DialogContent className="sm:max-w-[500px] bg-slate-900 text-white">
@@ -656,7 +749,7 @@ export default function FileExplorer({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
       {/* Dialog para importar repositorio */}
       <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
         <DialogContent className="sm:max-w-[500px] bg-slate-900 text-white">

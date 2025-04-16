@@ -7,6 +7,9 @@ import Home from "@/pages/Home";
 import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { AppProvider } from "./context/AppContext";
+import CodeCorrectionModal from './components/CodeCorrectionModal'; // Added import
+import { useAppContext } from './context/AppContext'; // Added import
+
 
 function Router() {
   return (
@@ -33,6 +36,13 @@ function App() {
     body.style.overflowX = "auto";
   }, []);
 
+  const { 
+    isCodeCorrectionModalOpen, 
+    selectedFileForCorrection, 
+    closeCodeCorrectionModal,
+    applyCodeCorrection
+  } = useAppContext();
+
   return (
     <QueryClientProvider client={queryClient}>
       <AppProvider>
@@ -44,6 +54,13 @@ function App() {
         >
           <Router />
           <Toaster />
+          {/* Modal de corrección de código */}
+          <CodeCorrectionModal 
+            isOpen={isCodeCorrectionModalOpen}
+            onClose={closeCodeCorrectionModal}
+            file={selectedFileForCorrection}
+            onApplyChanges={applyCodeCorrection}
+          />
         </motion.div>
       </AppProvider>
     </QueryClientProvider>

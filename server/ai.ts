@@ -273,3 +273,132 @@ export async function handleTerminalExecute(req: Request, res: Response) {
     res.status(500).json({ error: error.message || 'Error interno del servidor' });
   }
 }
+
+// Función para manejar la corrección de código
+export async function handleCodeCorrection(req: Request, res: Response) {
+  try {
+    const { content, instructions, language, fileId, projectId } = req.body;
+
+    if (!content || !instructions) {
+      return res.status(400).json({ error: 'Se requieren el contenido del código y las instrucciones' });
+    }
+
+    console.log(`Solicitando corrección de código. Lenguaje: ${language}, Instrucciones: ${instructions.substring(0, 50)}...`);
+
+    // Construir un prompt específico para la corrección de código
+    const prompt = `
+Actúa como un experto en desarrollo de software, especializado en ${language}.
+Por favor, revisa y corrige el siguiente código según estas instrucciones: "${instructions}"
+
+Código a corregir:
+\`\`\`${language}
+${content}
+\`\`\`
+
+Proporciona el código corregido junto con una explicación de los cambios realizados.
+Devuelve la respuesta en el siguiente formato:
+1. El código corregido
+2. Una lista de los cambios específicos realizados con números de línea
+3. Una explicación general de las mejoras
+`;
+
+    // Usar el modelo de GPT-4 para obtener la mejor corrección
+    const response = await generateOpenAIResponse(prompt);
+    
+    // Procesar la respuesta para extraer el código corregido y explicaciones
+    const correctedCode = extractCorrectedCode(response, language);
+    const changes = extractChanges(response);
+    const explanation = extractExplanation(response);
+
+    console.log("Corrección de código generada exitosamente");
+    
+    res.json({
+      correctedCode: correctedCode || content,  // Si no se pudo extraer, devolver el código original
+      changes,
+      explanation
+    });
+  } catch (error: any) {
+    console.error('Error al corregir código:', error);
+    let errorMessage = 'Error interno al corregir el código';
+
+    if (error.response && error.response.data) {
+      errorMessage = `Error: ${error.message}. Detalles: ${JSON.stringify(error.response.data)}`;
+    } else if (error.message) {
+      errorMessage = `Error: ${error.message}`;
+    }
+
+    res.status(500).json({ error: errorMessage });
+  }
+}
+
+// Función auxiliar para extraer el código corregido de la respuesta
+function extractCorrectedCode(response: string, language: string): string | null {
+  // Intentar encontrar el código entre bloques de código markdown
+  const codeBlockRegex = new RegExp(\`\\\`\\\`\\\`(?:${language})?\\n([\\s\\S]*?)\\n\\\`\\\`\\\`\`, 'i');
+  const match = response.match(codeBlockRegex);
+  
+  if (match && match[1]) {
+    return match[1].trim();
+  }
+  
+  // Si no hay bloques de código, intentar extraer de otras formas
+  // Por ejemplo, buscar secciones que empiecen con "Código corregido:"
+  const sectionRegex = /(?:Código corregido:|Código mejorado:|Aquí está el código corregido:)(?:\s*\n+)?([\s\S]+?)(?:\n\s*\n|$)/i;
+  const sectionMatch = response.match(sectionRegex);
+  
+  if (sectionMatch && sectionMatch[1]) {
+    return sectionMatch[1].trim();
+  }
+  
+  return null;
+}
+
+// Función auxiliar para extraer los cambios realizados
+function extractChanges(response: string): { description: string; lineNumbers?: number[] }[] {
+  const changes: { description: string; lineNumbers?: number[] }[] = [];
+  
+  // Buscar patrones como "Línea 10: Cambié X por Y"
+  const changeRegex = /(?:línea|líneas)\s+(\d+(?:\s*[-,]\s*\d+)*)\s*:\s*([^\n]+)/gi;
+  let match;
+  
+  while ((match = changeRegex.exec(response)) !== null) {
+    const lineNumbersText = match[1];
+    const description = match[2].trim();
+    
+    // Procesar números de línea (puede ser "10", "10-15", "10, 11, 12", etc.)
+    const lineNumbers = lineNumbersText.split(/\s*[-,]\s*/).map(n => parseInt(n.trim(), 10));
+    
+    changes.push({
+      description,
+      lineNumbers
+    });
+  }
+  
+  // Si no encontramos cambios con el patrón de línea, buscar listas
+  if (changes.length === 0) {
+    const listItemRegex = /(?:^|\n)(?:[*-]|\d+\.)\s*([^\n]+)/g;
+    
+    while ((match = listItemRegex.exec(response)) !== null) {
+      const description = match[1].trim();
+      if (description && !description.toLowerCase().includes("código corregido") && 
+          !description.toLowerCase().includes("explicación")) {
+        changes.push({ description });
+      }
+    }
+  }
+  
+  return changes;
+}
+
+// Función auxiliar para extraer la explicación general
+function extractExplanation(response: string): string | undefined {
+  // Buscar secciones que parezcan explicaciones
+  const explanationRegex = /(?:explicación general|explicación|mejoras realizadas|resumen de cambios):\s*\n+(.+(?:\n+(?!\n*(?:código|corrección|\d+\.|[*-]|\`\`\`)).+)*)/i;
+  const match = response.match(explanationRegex);
+  
+  if (match && match[1]) {
+    return match[1].trim();
+  }
+  
+  return undefined;
+}

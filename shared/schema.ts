@@ -43,3 +43,13 @@ export type File = typeof files.$inferSelect;
 export type InsertFile = z.infer<typeof insertFileSchema>;
 export type Settings = typeof settings.$inferSelect;
 export type InsertSettings = z.infer<typeof insertSettingsSchema>;
+// Otros esquemas existentes
+
+export interface CodeCorrectionResponse {
+  correctedCode: string;
+  changes?: {
+    description: string;
+    lineNumbers?: number[];
+  }[];
+  explanation?: string;
+}
