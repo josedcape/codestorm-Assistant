@@ -15,6 +15,8 @@ import {
   SheetContent,
   SheetTrigger
 } from '@/components/ui/sheet';
+import WebView from '@/components/WebView'; // Added
+import TerminalView from '@/components/TerminalView'; // Added
 
 const Home: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -23,9 +25,20 @@ const Home: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isMobile = useIsMobile();
 
+  const { 
+    showWebView, 
+    setShowWebView, 
+    isWebViewMaximized, 
+    setIsWebViewMaximized,
+    showTerminal,
+    setShowTerminal,
+    isTerminalMaximized,
+    setIsTerminalMaximized,
+    startNewProject
+  } = useAppContext(); // Added useAppContext
+
   // Simulación de inicio de proyecto
   const projectInitializedRef = useRef(false);
-  const { startNewProject } = useAppContext();
 
   useEffect(() => {
     if (!projectInitializedRef.current) {
@@ -74,10 +87,11 @@ const Home: React.FC = () => {
         <Header 
           toggleFileExplorer={toggleSidebar} 
           toggleAIAssistant={toggleAssistant}
+          onToggleWebView={() => setShowWebView(!showWebView)} // Added
+          onToggleTerminal={() => setShowTerminal(!showTerminal)} // Added
         />
 
-        <div className="flex flex-1 scroll-container"> {/* Aplicamos scroll-container */}
-          {/* Explorador de archivos */}
+        <div className="flex flex-1 scroll-container">
           {sidebarOpen && !isMobile && (
             <motion.div
               initial={{ opacity: 0, x: -20 }}
@@ -89,12 +103,10 @@ const Home: React.FC = () => {
             </motion.div>
           )}
 
-          {/* Editor de código (centro) */}
           <div className="flex-grow scroll-container">
             <EditorContainer />
           </div>
 
-          {/* Panel del asistente (derecha) */}
           <AnimatePresence>
             {assistantOpen && !isMobile && (
               <CodestormAssistant 
@@ -105,7 +117,6 @@ const Home: React.FC = () => {
           </AnimatePresence>
         </div>
 
-        {/* Barra de estado */}
         <StatusBar 
           showTerminal={terminalVisible}
           toggleTerminal={() => setTerminalVisible(!terminalVisible)}
@@ -114,10 +125,49 @@ const Home: React.FC = () => {
           column={25}
         />
 
-        {/* UI Móvil */}
+        {showWebView && isWebViewMaximized && (
+          <div className="fixed inset-0 bg-black/50 z-40">
+            <div className="w-4/5 h-4/5 mx-auto mt-20 relative">
+              <WebView 
+                onClose={() => setShowWebView(false)}
+                onMinimize={() => setIsWebViewMaximized(false)}
+              />
+            </div>
+          </div>
+        )}
+
+        {showTerminal && isTerminalMaximized && (
+          <div className="fixed inset-0 bg-black/50 z-40">
+            <div className="w-4/5 h-4/5 mx-auto mt-20 relative">
+              <TerminalView 
+                onClose={() => setShowTerminal(false)}
+                onMinimize={() => setIsTerminalMaximized(false)}
+              />
+            </div>
+          </div>
+        )}
+
+
+        {showWebView && !isWebViewMaximized && (
+          <div className="fixed bottom-4 left-4 z-50">
+            <WebView 
+              isMinimized 
+              onMaximize={() => setIsWebViewMaximized(true)} 
+            />
+          </div>
+        )}
+
+        {showTerminal && !isTerminalMaximized && (
+          <div className="fixed bottom-4 right-4 z-50">
+            <TerminalView 
+              isMinimized 
+              onMaximize={() => setIsTerminalMaximized(true)} 
+            />
+          </div>
+        )}
+
         {isMobile && (
           <>
-            {/* Menú lateral para explorador en móvil */}
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild>
                 <Button 
@@ -137,7 +187,6 @@ const Home: React.FC = () => {
               </SheetContent>
             </Sheet>
 
-            {/* Botón flotante para mostrar asistente en móvil */}
             <Button 
               className="fixed bottom-6 right-6 h-12 w-12 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg"
               onClick={toggleAssistant}
@@ -145,7 +194,6 @@ const Home: React.FC = () => {
               {assistantOpen ? <X size={20} /> : <Bot size={20} />}
             </Button>
 
-            {/* Panel de asistente en modo móvil */}
             <AnimatePresence>
               {assistantOpen && isMobile && (
                 <motion.div

@@ -1,8 +1,18 @@
-import React, { useState } from 'react';
+
+import React, { useState, useRef } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Folder, 
@@ -14,14 +24,21 @@ import {
   Search,
   X,
   FolderPlus,
-  FilePlus
+  FilePlus,
+  Edit,
+  Download,
+  Trash2,
+  Upload,
+  GitBranch,
+  FileArchive
 } from 'lucide-react';
+import axios from 'axios';
 
 interface FileExplorerProps {
-  files?: { path: string; name: string }[];
+  files?: { path: string; name: string; id?: string }[];
   folders?: { path: string; name: string; expanded: boolean }[];
   currentPath?: string;
-  onOpenFile?: (path: string, name: string) => void;
+  onOpenFile?: (path: string, name: string, id?: string) => void;
   onCreateFile?: (name: string, content: string) => Promise<boolean>;
   onCreateFolder?: (name: string) => Promise<boolean>;
   onRefresh?: () => Promise<void>;
@@ -43,8 +60,14 @@ export default function FileExplorer({
   const [newFileName, setNewFileName] = useState('');
   const [newFolderName, setNewFolderName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<{path: string; name: string; id?: string} | null>(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editedContent, setEditedContent] = useState('');
+  const [importRepoUrl, setImportRepoUrl] = useState('');
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const { currentProject } = useAppContext();
+  const { currentProject, updateFile, deleteFile } = useAppContext();
   
   // Simular datos si no hay archivos proporcionados
   const projectFiles = currentProject?.files || [
@@ -79,7 +102,8 @@ export default function FileExplorer({
   
   const effectiveFiles = files.length > 0 ? files : projectFiles.map(file => ({
     path: file.path || '',
-    name: file.name
+    name: file.name,
+    id: file.id
   }));
   
   const effectiveFolders = folders.length > 0 ? folders : mockFolders;
@@ -91,9 +115,9 @@ export default function FileExplorer({
     }));
   };
   
-  const handleFileClick = (path: string, name: string) => {
+  const handleFileClick = (path: string, name: string, id?: string) => {
     if (onOpenFile) {
-      onOpenFile(path, name);
+      onOpenFile(path, name, id);
     }
   };
   
@@ -144,6 +168,166 @@ export default function FileExplorer({
     }
   };
   
+  const handleEditFile = async (file: {path: string; name: string; id?: string}) => {
+    setSelectedFile(file);
+    try {
+      if (file.id) {
+        const response = await axios.get(`/api/files/${file.id}`);
+        setEditedContent(response.data.content || '');
+        setShowEditDialog(true);
+      }
+    } catch (error) {
+      console.error('Error loading file content:', error);
+    }
+  };
+  
+  const handleSaveEdit = async () => {
+    if (!selectedFile || !selectedFile.id) return;
+    
+    setIsLoading(true);
+    try {
+      await updateFile(selectedFile.id, { content: editedContent });
+      setShowEditDialog(false);
+      toast('Archivo actualizado correctamente');
+    } catch (error) {
+      console.error('Error saving file:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const handleDeleteFile = async (file: {path: string; name: string; id?: string}) => {
+    if (!file.id) return;
+    
+    if (confirm(`¿Estás seguro que deseas eliminar ${file.name}?`)) {
+      try {
+        await deleteFile(file.id);
+        toast(`Archivo ${file.name} eliminado`);
+        handleRefresh();
+      } catch (error) {
+        console.error('Error deleting file:', error);
+      }
+    }
+  };
+  
+  const handleDownloadFile = async (file: {path: string; name: string; id?: string}) => {
+    if (!file.id) return;
+    
+    try {
+      const response = await axios.get(`/api/files/${file.id}`);
+      const content = response.data.content || '';
+      
+      // Crear un blob y descargarlo
+      const blob = new Blob([content], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = file.name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading file:', error);
+    }
+  };
+  
+  const handleUploadFile = () => {
+    fileInputRef.current?.click();
+  };
+  
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+    
+    setIsLoading(true);
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const reader = new FileReader();
+        
+        reader.onload = async (e) => {
+          const content = e.target?.result as string;
+          if (onCreateFile) {
+            await onCreateFile(file.name, content);
+          }
+        };
+        
+        reader.readAsText(file);
+      }
+      handleRefresh();
+    } catch (error) {
+      console.error('Error uploading files:', error);
+    } finally {
+      setIsLoading(false);
+      // Reset input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+  
+  const handleImportRepository = async () => {
+    if (!importRepoUrl.trim()) return;
+    
+    setIsLoading(true);
+    try {
+      // Enviar petición al servidor para importar el repositorio
+      await axios.post('/api/terminal/execute', {
+        command: `mkdir -p /tmp/repo && cd /tmp/repo && git clone ${importRepoUrl} . && cp -r . /home/runner/workspace && rm -rf /tmp/repo`
+      });
+      
+      setImportRepoUrl('');
+      setShowImportDialog(false);
+      toast('Repositorio importado correctamente');
+      handleRefresh();
+    } catch (error) {
+      console.error('Error importing repository:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const handleImportZip = async () => {
+    fileInputRef.current?.click();
+  };
+  
+  const handleZipUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+    
+    setIsLoading(true);
+    try {
+      // Usar FormData para subir el archivo zip
+      const formData = new FormData();
+      formData.append('zipFile', files[0]);
+      
+      // Enviar el archivo al servidor
+      await axios.post('/api/upload-zip', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      toast('Archivo ZIP importado correctamente');
+      handleRefresh();
+    } catch (error) {
+      console.error('Error uploading zip:', error);
+    } finally {
+      setIsLoading(false);
+      // Reset input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+  
+  // Función para mostrar notificaciones toast (simplificada)
+  const toast = (message: string) => {
+    console.log(message);
+    // Aquí implementaríamos una notificación real
+  };
+  
   // Filtrar archivos basado en búsqueda
   const filteredFiles = searchQuery 
     ? effectiveFiles.filter(file => 
@@ -185,37 +369,36 @@ export default function FileExplorer({
             </Tooltip>
           </TooltipProvider>
           
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => setShowNewFileInput(!showNewFileInput)}
-                >
-                  <FilePlus size={14} />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Nuevo archivo</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => setShowNewFolderInput(!showNewFolderInput)}
-                >
-                  <FolderPlus size={14} />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Nueva carpeta</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-7 w-7">
+                <Plus size={14} />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setShowNewFileInput(!showNewFileInput)}>
+                <FilePlus className="mr-2 h-4 w-4" />
+                <span>Nuevo archivo</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowNewFolderInput(!showNewFolderInput)}>
+                <FolderPlus className="mr-2 h-4 w-4" />
+                <span>Nueva carpeta</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleUploadFile}>
+                <Upload className="mr-2 h-4 w-4" />
+                <span>Subir archivo</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowImportDialog(true)}>
+                <GitBranch className="mr-2 h-4 w-4" />
+                <span>Importar repositorio</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleImportZip}>
+                <FileArchive className="mr-2 h-4 w-4" />
+                <span>Importar ZIP</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
       
@@ -314,7 +497,7 @@ export default function FileExplorer({
       </AnimatePresence>
       
       {/* Estructura de archivos */}
-      <div className="flex-grow overflow-y-auto p-1">
+      <ScrollArea className="flex-grow overflow-y-auto p-1">
         {filteredFolders.length === 0 && filteredFiles.length === 0 ? (
           <div className="text-center py-8 text-slate-500 text-sm">
             {searchQuery ? (
@@ -357,11 +540,35 @@ export default function FileExplorer({
                       {filesInFolder.map((file) => (
                         <div
                           key={file.path}
-                          className="flex items-center py-1 px-2 rounded-md hover:bg-slate-800 cursor-pointer text-sm"
-                          onClick={() => handleFileClick(file.path, file.name)}
+                          className="flex items-center justify-between py-1 px-2 rounded-md hover:bg-slate-800 text-sm group"
                         >
-                          <File size={14} className="mr-1.5 text-slate-400" />
-                          <span>{file.name}</span>
+                          <div 
+                            className="flex items-center cursor-pointer flex-1"
+                            onClick={() => handleFileClick(file.path, file.name, file.id)}
+                          >
+                            <File size={14} className="mr-1.5 text-slate-400" />
+                            <span>{file.name}</span>
+                          </div>
+                          <div className="hidden group-hover:flex items-center">
+                            <button 
+                              className="p-1 text-slate-400 hover:text-white"
+                              onClick={() => handleEditFile(file)}
+                            >
+                              <Edit size={12} />
+                            </button>
+                            <button 
+                              className="p-1 text-slate-400 hover:text-white"
+                              onClick={() => handleDownloadFile(file)}
+                            >
+                              <Download size={12} />
+                            </button>
+                            <button 
+                              className="p-1 text-slate-400 hover:text-red-500"
+                              onClick={() => handleDeleteFile(file)}
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -377,16 +584,112 @@ export default function FileExplorer({
             }).map((file) => (
               <div
                 key={file.path}
-                className="flex items-center py-1 px-2 rounded-md hover:bg-slate-800 cursor-pointer text-sm"
-                onClick={() => handleFileClick(file.path, file.name)}
+                className="flex items-center justify-between py-1 px-2 rounded-md hover:bg-slate-800 text-sm group"
               >
-                <File size={14} className="mr-1.5 text-slate-400" />
-                <span>{file.name}</span>
+                <div 
+                  className="flex items-center cursor-pointer flex-1"
+                  onClick={() => handleFileClick(file.path, file.name, file.id)}
+                >
+                  <File size={14} className="mr-1.5 text-slate-400" />
+                  <span>{file.name}</span>
+                </div>
+                <div className="hidden group-hover:flex items-center">
+                  <button 
+                    className="p-1 text-slate-400 hover:text-white"
+                    onClick={() => handleEditFile(file)}
+                  >
+                    <Edit size={12} />
+                  </button>
+                  <button 
+                    className="p-1 text-slate-400 hover:text-white"
+                    onClick={() => handleDownloadFile(file)}
+                  >
+                    <Download size={12} />
+                  </button>
+                  <button 
+                    className="p-1 text-slate-400 hover:text-red-500"
+                    onClick={() => handleDeleteFile(file)}
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
               </div>
             ))}
           </>
         )}
-      </div>
+      </ScrollArea>
+      
+      {/* File Upload Input (hidden) */}
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        className="hidden"
+        onChange={handleFileUpload}
+        multiple
+      />
+      
+      {/* Dialog para editar archivo */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="sm:max-w-[500px] bg-slate-900 text-white">
+          <DialogHeader>
+            <DialogTitle>Editar {selectedFile?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="my-2">
+            <textarea
+              className="w-full h-64 p-2 bg-slate-800 text-white border border-slate-700 rounded-md"
+              value={editedContent}
+              onChange={(e) => setEditedContent(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowEditDialog(false)}
+              className="mr-2"
+            >
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveEdit} disabled={isLoading}>
+              {isLoading ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Guardar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Dialog para importar repositorio */}
+      <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
+        <DialogContent className="sm:max-w-[500px] bg-slate-900 text-white">
+          <DialogHeader>
+            <DialogTitle>Importar Repositorio Git</DialogTitle>
+          </DialogHeader>
+          <div className="my-2">
+            <label className="text-sm mb-2 block">URL del repositorio</label>
+            <Input
+              placeholder="https://github.com/usuario/repositorio.git"
+              value={importRepoUrl}
+              onChange={(e) => setImportRepoUrl(e.target.value)}
+              className="bg-slate-800 border-slate-700"
+            />
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowImportDialog(false)}
+              className="mr-2"
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleImportRepository} 
+              disabled={isLoading || !importRepoUrl.trim()}
+            >
+              {isLoading ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Importar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

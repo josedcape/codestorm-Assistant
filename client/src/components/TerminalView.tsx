@@ -1,146 +1,163 @@
-import React, { useEffect, useRef } from 'react';
-import { useAppContext } from '@/context/AppContext';
-import { Terminal as TerminalIcon, Mic, FileCode, FolderPlus, File } from 'lucide-react';
-import { motion } from 'framer-motion';
 
-interface TerminalLine {
-  text: string;
-  type: 'command' | 'output' | 'success' | 'error' | 'code';
-  language?: string;
-  code?: string;
-  fromVoice?: boolean;
-}
+import React, { useState, useRef, useEffect } from 'react';
+import { ScrollArea } from './ui/scroll-area';
+import { Terminal as TerminalIcon, Maximize2, Minimize2, X } from 'lucide-react';
+import { Button } from './ui/button';
+import axios from 'axios';
 
 interface TerminalViewProps {
-  lines?: TerminalLine[];
+  isMinimized?: boolean;
+  onMinimize?: () => void;
+  onMaximize?: () => void;
+  onClose?: () => void;
 }
 
-export default function TerminalView({ lines: propLines }: TerminalViewProps) {
-  const { terminalLines } = useAppContext();
-  const lines = propLines || terminalLines;
+const TerminalView: React.FC<TerminalViewProps> = ({
+  isMinimized = false,
+  onMinimize,
+  onMaximize,
+  onClose
+}) => {
+  const [command, setCommand] = useState('');
+  const [history, setHistory] = useState<string[]>([]);
+  const [output, setOutput] = useState<{type: 'command' | 'output', content: string}[]>([
+    { type: 'output', content: '🚀 Terminal conectada. Escribe los comandos a ejecutar.' }
+  ]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const [isLoading, setIsLoading] = useState(false);
   const terminalRef = useRef<HTMLDivElement>(null);
-  
-  // Auto-scroll to the bottom when new lines are added
+  const inputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
+    // Scroll al fondo cuando se añada una nueva salida
     if (terminalRef.current) {
       terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
     }
-  }, [lines]);
-  
-  // Format code blocks with basic syntax highlighting
-  const formatCode = (code: string, language: string = 'javascript') => {
-    // Basic syntax highlighting for JS/TS
-    if (language === 'javascript' || language === 'typescript' || language === 'jsx' || language === 'tsx') {
-      // Replace keywords
-      return code
-        .replace(/\b(const|let|var|function|return|if|else|for|while|class|import|export|from|async|await)\b/g, '<span class="text-pink-400">$1</span>')
-        .replace(/\b(true|false|null|undefined)\b/g, '<span class="text-purple-400">$1</span>')
-        .replace(/(['"])(?:\\\1|.)*?\1/g, '<span class="text-yellow-300">$&</span>')
-        .replace(/\/\/.*/g, '<span class="text-gray-500">$&</span>')
-        .replace(/\b(\d+)\b/g, '<span class="text-purple-300">$1</span>');
-    }
     
-    return code;
+    // Dar foco al input cuando el componente se monte
+    inputRef.current?.focus();
+  }, [output]);
+
+  const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && command.trim()) {
+      e.preventDefault();
+      
+      // Agregar el comando al historial
+      const newHistory = [...history, command];
+      if (newHistory.length > 50) newHistory.shift(); // Limitar historial a 50 comandos
+      setHistory(newHistory);
+      setHistoryIndex(-1);
+      
+      // Mostrar el comando en la terminal
+      setOutput(prev => [...prev, { type: 'command', content: `$ ${command}` }]);
+      
+      // Procesar comando especial "clear"
+      if (command.toLowerCase() === 'clear') {
+        setOutput([]);
+        setCommand('');
+        return;
+      }
+      
+      // Ejecutar el comando
+      executeCommand(command);
+      setCommand('');
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      // Navegar hacia atrás en el historial
+      if (history.length > 0 && historyIndex < history.length - 1) {
+        const newIndex = historyIndex + 1;
+        setHistoryIndex(newIndex);
+        setCommand(history[history.length - 1 - newIndex]);
+      }
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      // Navegar hacia adelante en el historial
+      if (historyIndex > 0) {
+        const newIndex = historyIndex - 1;
+        setHistoryIndex(newIndex);
+        setCommand(history[history.length - 1 - newIndex]);
+      } else if (historyIndex === 0) {
+        setHistoryIndex(-1);
+        setCommand('');
+      }
+    }
   };
 
-  // Obtener icono según el tipo de comando
-  const getCommandIcon = (text: string) => {
-    const lowerText = text.toLowerCase();
-    
-    if (lowerText.includes('mkdir') || lowerText.includes('carpeta')) {
-      return <FolderPlus size={14} className="mr-2 text-amber-400" />;
+  const executeCommand = async (cmd: string) => {
+    setIsLoading(true);
+    try {
+      const response = await axios.post('/api/terminal/execute', { command: cmd });
+      const result = response.data.output || 'Comando ejecutado.';
+      
+      // Mostrar la salida en la terminal
+      setOutput(prev => [...prev, { type: 'output', content: result }]);
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.error || 'Error al ejecutar el comando';
+      setOutput(prev => [...prev, { type: 'output', content: `Error: ${errorMessage}` }]);
+    } finally {
+      setIsLoading(false);
     }
-    
-    if (lowerText.includes('touch') || lowerText.includes('archivo') || lowerText.includes('create')) {
-      return <File size={14} className="mr-2 text-blue-400" />;
-    }
-    
-    if (lowerText.includes('npm') || lowerText.includes('install')) {
-      return <FileCode size={14} className="mr-2 text-green-400" />;
-    }
-    
-    if (lowerText.includes('voice') || lowerText.includes('voz')) {
-      return <Mic size={14} className="mr-2 text-purple-400" />;
-    }
-    
-    return <TerminalIcon size={14} className="mr-2 text-cyan-400" />;
   };
-  
-  return (
-    <div 
-      ref={terminalRef}
-      className="flex-grow bg-[#121212] rounded-lg font-mono p-4 overflow-y-auto text-sm scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-slate-900"
-    >
-      <div className="text-cyan-400">
-        {lines.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-32 text-slate-500 italic space-y-2">
-            <TerminalIcon size={24} />
-            <p>La terminal está lista para recibir comandos</p>
-            <p className="text-xs">Puedes usar comandos por voz diciendo "crear archivo", "ejecutar", etc.</p>
-          </div>
-        ) : (
-          lines.map((line, index) => (
-            <motion.div 
-              key={index} 
-              className="mb-2"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              {line.type === 'command' && (
-                <div className="mb-1 flex items-start">
-                  {getCommandIcon(line.text)}
-                  <span className="text-green-400 mr-2">$</span>
-                  <span className="text-cyan-100">{line.text}</span>
-                  {line.fromVoice && (
-                    <span className="ml-2 text-xs text-purple-400 px-1 rounded bg-purple-900 bg-opacity-30">
-                      comando por voz
-                    </span>
-                  )}
-                </div>
-              )}
-              
-              {line.type === 'output' && (
-                <div className="text-gray-400 mb-2 pl-6 border-l border-slate-800">{line.text}</div>
-              )}
-              
-              {line.type === 'success' && (
-                <div className="text-green-400 mb-2 flex items-start">
-                  <span className="mr-2 ml-6">✓</span>
-                  <span>{line.text}</span>
-                </div>
-              )}
-              
-              {line.type === 'error' && (
-                <div className="text-red-400 mb-2 flex items-start">
-                  <span className="mr-2 ml-6">✗</span>
-                  <span>{line.text}</span>
-                </div>
-              )}
-              
-              {line.type === 'code' && (
-                <div className="bg-[#1E1E1E] p-3 rounded-md my-2 ml-6 border-l-2 border-blue-500">
-                  {line.language && (
-                    <div className="text-xs text-slate-500 mb-2 flex items-center">
-                      <FileCode size={12} className="mr-1" />
-                      {line.language}
-                    </div>
-                  )}
-                  <pre 
-                    className="overflow-x-auto"
-                    dangerouslySetInnerHTML={{ 
-                      __html: formatCode(line.code || line.text, line.language)
-                    }}
-                  ></pre>
-                </div>
-              )}
-            </motion.div>
-          ))
-        )}
-        
-        {/* Blinking cursor */}
-        <div className="inline-block w-2 h-4 bg-cyan-400 ml-1 animate-pulse"></div>
+
+  if (isMinimized) {
+    return (
+      <div className="fixed bottom-4 right-4 bg-slate-800 p-2 rounded-full shadow-lg cursor-pointer z-50" onClick={onMaximize}>
+        <TerminalIcon className="h-6 w-6 text-green-400" />
       </div>
+    );
+  }
+
+  return (
+    <div className="bg-slate-900 border border-slate-700 rounded-md shadow-lg flex flex-col h-full">
+      <div className="flex items-center justify-between bg-slate-800 px-3 py-2 border-b border-slate-700">
+        <div className="flex items-center">
+          <TerminalIcon className="h-4 w-4 text-green-400 mr-2" />
+          <span className="text-sm font-medium">Terminal</span>
+        </div>
+        <div className="flex space-x-1">
+          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onMinimize}>
+            <Minimize2 className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onMaximize}>
+            <Maximize2 className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+      
+      <ScrollArea 
+        ref={terminalRef} 
+        className="flex-grow p-3 font-mono text-sm overflow-auto"
+        style={{ maxHeight: "calc(100% - 36px)" }}
+      >
+        {output.map((line, index) => (
+          <div 
+            key={index} 
+            className={line.type === 'command' ? 'text-green-400' : 'text-white'}
+            style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
+          >
+            {line.content}
+          </div>
+        ))}
+        <div className="flex items-center mt-1">
+          <span className="text-green-400 mr-2">$</span>
+          <input
+            ref={inputRef}
+            type="text"
+            value={command}
+            onChange={(e) => setCommand(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className="bg-transparent border-none outline-none flex-grow text-white"
+            placeholder={isLoading ? "Ejecutando..." : "Escribe un comando..."}
+            disabled={isLoading}
+            autoFocus
+          />
+        </div>
+      </ScrollArea>
     </div>
   );
-}
+};
+
+export default TerminalView;

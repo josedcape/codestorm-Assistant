@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { AIModel, AgentType, DevelopmentMode, Conversation, Message } from '@/lib/aiService';
 import { v4 as uuidv4 } from 'uuid';
+import axios from 'axios'; // Added for API calls
 
 export interface FileInfo {
   id: string;
@@ -85,6 +86,19 @@ interface AppContextType {
   setShowAIAssistant: (show: boolean) => void;
   showPreview: boolean;
   setShowPreview: (show: boolean) => void;
+  showWebView: boolean;
+  setShowWebView: (show: boolean) => void;
+  isWebViewMaximized: boolean;
+  setIsWebViewMaximized: (isMaximized: boolean) => void;
+  showTerminal: boolean;
+  setShowTerminal: (show: boolean) => void;
+  isTerminalMaximized: boolean;
+  setIsTerminalMaximized: (isMaximized: boolean) => void;
+  updateFile: (id: string, data: Partial<FileInfo>) => Promise<void>;
+  deleteFile: (id: string) => Promise<void>;
+  createFile: (file: Partial<FileInfo>) => Promise<void>;
+  refreshFiles: () => Promise<void>;
+
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -119,6 +133,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [showFileExplorer, setShowFileExplorer] = useState(true);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [showWebView, setShowWebView] = useState(false);
+  const [isWebViewMaximized, setIsWebViewMaximized] = useState(true);
+  const [showTerminal, setShowTerminal] = useState(false);
+  const [isTerminalMaximized, setIsTerminalMaximized] = useState(true);
+
 
   // Terminal functions
   const addTerminalLine = (line: TerminalLine) => {
@@ -265,14 +284,14 @@ class App {
         ...prev,
         messages: updatedMessages,
         // Update title if it's the first user message
-        title: prev.messages.length === 0 && role === 'user' 
-          ? content.substring(0, 30) + (content.length > 30 ? '...' : '') 
+        title: prev.messages.length === 0 && role === 'user'
+          ? content.substring(0, 30) + (content.length > 30 ? '...' : '')
           : prev.title
       };
 
       // Update in conversations list
-      setConversations(prevConvs => 
-        prevConvs.map(conv => 
+      setConversations(prevConvs =>
+        prevConvs.map(conv =>
           conv.id === updatedConversation.id ? updatedConversation : conv
         )
       );
@@ -318,6 +337,51 @@ class App {
 
   const getSavedConversations = () => savedConversations;
 
+  // File Management Functions
+  const refreshFiles = async () => {
+    try {
+      const response = await axios.get('/api/files');
+      if (response.data) {
+        setCurrentProject({
+          id: 'default-project',
+          name: 'Mi Proyecto',
+          description: '', // Added description
+          tech_stack: [], // Added tech stack
+          files: response.data
+        });
+      }
+    } catch (error) {
+      console.error('Error loading files:', error);
+    }
+  };
+
+  const updateFile = async (id: string, data: Partial<FileInfo>) => {
+    try {
+      await axios.put(`/api/files/${id}`, data);
+      await refreshFiles();
+    } catch (error) {
+      console.error('Error updating file:', error);
+    }
+  };
+
+  const deleteFile = async (id: string) => {
+    try {
+      await axios.delete(`/api/files/${id}`);
+      await refreshFiles();
+    } catch (error) {
+      console.error('Error deleting file:', error);
+    }
+  };
+
+  const createFile = async (file: Partial<FileInfo>) => {
+    try {
+      await axios.post('/api/files', file);
+      await refreshFiles();
+    } catch (error) {
+      console.error('Error creating file:', error);
+    }
+  };
+
 
   return (
     <AppContext.Provider
@@ -353,7 +417,19 @@ class App {
         showAIAssistant,
         setShowAIAssistant,
         showPreview,
-        setShowPreview
+        setShowPreview,
+        showWebView,
+        setShowWebView,
+        isWebViewMaximized,
+        setIsWebViewMaximized,
+        showTerminal,
+        setShowTerminal,
+        isTerminalMaximized,
+        setIsTerminalMaximized,
+        updateFile,
+        deleteFile,
+        createFile,
+        refreshFiles
       }}
     >
       {children}

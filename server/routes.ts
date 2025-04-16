@@ -140,6 +140,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+
+  // Middleware para manejo de archivos
+  import multer from 'multer';
+  import { exec } from 'child_process';
+  import fs from 'fs';
+  import path from 'path';
+  
+  // Configuración de multer para la carga de archivos
+  const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+      const tempDir = '/tmp/uploads';
+      if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
+      }
+      cb(null, tempDir);
+    },
+    filename: function (req, file, cb) {
+      cb(null, Date.now() + '-' + file.originalname);
+    }
+  });
+  
+  const upload = multer({ storage: storage });
+  
+  // Ruta para subir y descomprimir archivos ZIP
+  app.post('/api/upload-zip', upload.single('zipFile'), (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No se ha proporcionado ningún archivo' });
+    }
+    
+    const zipPath = req.file.path;
+    const extractPath = '/home/runner/workspace';
+    
+    // Crear directorio temporal para la extracción
+    const tempExtractDir = '/tmp/extract';
+    if (!fs.existsSync(tempExtractDir)) {
+      fs.mkdirSync(tempExtractDir, { recursive: true });
+    }
+    
+    // Descomprimir el archivo
+    exec(`unzip -o "${zipPath}" -d "${tempExtractDir}"`, (error, stdout, stderr) => {
+      if (error) {
+        console.error(`Error descomprimiendo el archivo: ${error.message}`);
+        return res.status(500).json({ error: 'Error al descomprimir el archivo' });
+      }
+      
+      // Copiar archivos al directorio de trabajo
+      exec(`cp -r "${tempExtractDir}"/* "${extractPath}"`, (cpError, cpStdout, cpStderr) => {
+        if (cpError) {
+          console.error(`Error copiando archivos: ${cpError.message}`);
+          return res.status(500).json({ error: 'Error al copiar los archivos descomprimidos' });
+        }
+        
+        // Limpiar archivos temporales
+        exec(`rm -rf "${zipPath}" "${tempExtractDir}"`, () => {
+          res.json({ success: true, message: 'Archivo descomprimido correctamente' });
+        });
+      });
+    });
+  });
+
   // API endpoints para IA
   app.post("/api/ai/generate", handleAIGenerate);
   

@@ -10,7 +10,8 @@ import {
   MenuIcon,
   Code,
   Terminal,
-  Braces
+  Braces,
+  ExternalLink
 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { motion } from 'framer-motion';
@@ -20,6 +21,8 @@ interface HeaderProps {
   toggleAIAssistant?: () => void;
   togglePreview?: () => void;
   toggleSettings?: () => void;
+  toggleWebView?: () => void;
+  toggleTerminal?: () => void;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -27,6 +30,8 @@ const Header: React.FC<HeaderProps> = ({
   toggleAIAssistant,
   togglePreview,
   toggleSettings,
+  toggleWebView,
+  toggleTerminal,
 }) => {
   const { 
     showFileExplorer, 
@@ -34,7 +39,7 @@ const Header: React.FC<HeaderProps> = ({
     setShowFileExplorer, 
     setShowAIAssistant 
   } = useAppContext();
-  
+
   const isMobile = useIsMobile();
 
   const handleToggleFileExplorer = () => {
@@ -119,6 +124,28 @@ const Header: React.FC<HeaderProps> = ({
               >
                 <Settings size={16} />
                 {!isMobile && <span>Configuración</span>}
+              </Button>
+            )}
+            {toggleWebView && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={toggleWebView}
+                className="gap-1"
+              >
+                <ExternalLink size={16} />
+                {!isMobile && <span>WebView</span>}
+              </Button>
+            )}
+            {toggleTerminal && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={toggleTerminal}
+                className="gap-1"
+              >
+                <Terminal size={16} />
+                {!isMobile && <span>Terminal</span>}
               </Button>
             )}
           </div>
