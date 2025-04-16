@@ -334,7 +334,7 @@ Devuelve la respuesta en el siguiente formato:
 // Función auxiliar para extraer el código corregido de la respuesta
 function extractCorrectedCode(response: string, language: string): string | null {
   // Intentar encontrar el código entre bloques de código markdown
-  const codeBlockRegex = new RegExp(\`\\\`\\\`\\\`(?:${language})?\\n([\\s\\S]*?)\\n\\\`\\\`\\\`\`, 'i');
+  const codeBlockRegex = new RegExp(`\`\`\`(?:${language})?\\n([\\s\\S]*?)\\n\`\`\``, 'i');
   const match = response.match(codeBlockRegex);
   
   if (match && match[1]) {
