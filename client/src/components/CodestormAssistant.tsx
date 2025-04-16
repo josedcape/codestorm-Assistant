@@ -72,6 +72,8 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
   const [activeTab, setActiveTab] = useState('chat');
   const [message, setMessage] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showAgentPanel, setShowAgentPanel] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [showVoiceInput, setShowVoiceInput] = useState(false);
   const [showFileUpload, setShowFileUpload] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -330,7 +332,7 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
       exit={{ opacity: 0, x: 300 }}
       transition={{ duration: 0.3 }}
       className={`flex flex-col bg-slate-900 border-l border-slate-800 h-full transition-all duration-300 ${
-        expanded ? 'w-full md:w-[800px]' : 'w-full max-w-[400px]'
+        expanded ? 'expanded-chat' : 'w-full max-w-[400px]'
       }`}
     >
       {/* Cabecera */}
@@ -482,23 +484,33 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
 
             {/* Contenido de Chat */}
             <TabsContent value="chat" className="flex-1 flex flex-col p-4 overflow-hidden">
-              {/* Configuración del modelo */}
-              <div className="mb-4 pb-4 border-b border-slate-800">
-                <ModelSelector 
-                  currentModel={selectedModel}
-                  onModelChange={(model) => setSelectedModel(model as AIModel)}
-                  developmentMode={developmentMode}
-                  onDevelopmentModeChange={setDevelopmentMode}
-                />
+              {/* Panel flotante de configuración */}
+              <div className={`agent-panel ${showAgentPanel ? 'visible' : ''}`}>
+                <div className="mb-4 pb-4 border-b border-slate-800">
+                  <ModelSelector 
+                    currentModel={selectedModel}
+                    onModelChange={(model) => setSelectedModel(model as AIModel)}
+                    developmentMode={developmentMode}
+                    onDevelopmentModeChange={setDevelopmentMode}
+                  />
+                </div>
+
+                <div className="mb-4">
+                  <AgentSelector 
+                    currentAgent={currentAgent}
+                    onAgentChange={setCurrentAgent}
+                  />
+                </div>
               </div>
 
-              {/* Selector de agente */}
-              <div className="mb-4">
-                <AgentSelector 
-                  currentAgent={currentAgent}
-                  onAgentChange={setCurrentAgent}
-                />
-              </div>
+              {/* Botón flotante para mostrar/ocultar panel */}
+              <button 
+                className="agent-panel-toggle"
+                onClick={() => setShowAgentPanel(!showAgentPanel)}
+                title={showAgentPanel ? "Ocultar configuración" : "Mostrar configuración"}
+              >
+                {showAgentPanel ? <ChevronUp size={20} /> : <Settings size={20} />}
+              </button>
 
               {/* Mensajes */}
               <div 
