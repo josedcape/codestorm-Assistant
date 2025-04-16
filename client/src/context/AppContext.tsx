@@ -114,6 +114,14 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+export const useAppContext = () => {
+  const context = useContext(AppContext);
+  if (context === undefined) {
+    throw new Error('useAppContext must be used within an AppProvider');
+  }
+  return context;
+};
+
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   // AI Model settings
   const [selectedModel, setSelectedModel] = useState<AIModel>('gpt-4o');

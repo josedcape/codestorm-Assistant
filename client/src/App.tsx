@@ -6,8 +6,9 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import { useEffect } from "react";
 import { motion } from "framer-motion";
-import { AppProvider } from "./context/AppContext";
+import { AppProvider, useAppContext } from "./context/AppContext"; // Added useAppContext import
 import CodeCorrectionModal from './components/CodeCorrectionModal'; // Added import
+
 function Router() {
   return (
     <Switch>
@@ -17,14 +18,9 @@ function Router() {
   );
 }
 
-function AppWithProviders() {
-  const { 
-    isCodeCorrectionModalOpen, 
-    selectedFileForCorrection, 
-    closeCodeCorrectionModal,
-    applyCodeCorrection
-  } = useAppContext();
-  
+const AppWithProviders = () => {
+  const { isCodeCorrectionModalOpen, selectedFileForCorrection, closeCodeCorrectionModal, applyCodeCorrection } = useAppContext();
+
   return (
     <motion.div 
       initial={{ opacity: 0 }}
