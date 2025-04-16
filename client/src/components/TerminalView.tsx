@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { useAppContext } from '@/context/AppContext';
 
 interface TerminalLine {
   text: string;
@@ -8,10 +9,12 @@ interface TerminalLine {
 }
 
 interface TerminalViewProps {
-  lines: TerminalLine[];
+  lines?: TerminalLine[];
 }
 
-export default function TerminalView({ lines }: TerminalViewProps) {
+export default function TerminalView({ lines: propLines }: TerminalViewProps) {
+  const { terminalLines } = useAppContext();
+  const lines = propLines || terminalLines;
   const terminalRef = useRef<HTMLDivElement>(null);
   
   // Auto-scroll to the bottom when new lines are added

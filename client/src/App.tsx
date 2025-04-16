@@ -35,15 +35,17 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-        className="min-h-screen"
-      >
-        <Router />
-        <Toaster />
-      </motion.div>
+      <AppProvider>
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="min-h-screen"
+        >
+          <Router />
+          <Toaster />
+        </motion.div>
+      </AppProvider>
     </QueryClientProvider>
   );
 }

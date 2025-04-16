@@ -2,12 +2,14 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Terminal as TerminalIcon, Play, XCircle, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useAppContext } from '@/context/AppContext';
 
 interface TerminalIntegrationProps {
-  onExecuteCommand: (command: string) => Promise<string>;
+  onExecuteCommand?: (command: string) => Promise<string>;
 }
 
 const TerminalIntegration: React.FC<TerminalIntegrationProps> = ({ onExecuteCommand }) => {
+  const { addTerminalLine, clearTerminal: clearAppTerminal } = useAppContext();
   const [command, setCommand] = useState('');
   const [history, setHistory] = useState<Array<{type: 'command' | 'response', content: string}>>([]);
   const [isExecuting, setIsExecuting] = useState(false);
@@ -37,32 +39,67 @@ const TerminalIntegration: React.FC<TerminalIntegrationProps> = ({ onExecuteComm
       // Add command to history
       setHistory(prev => [...prev, { type: 'command', content: command }]);
       
-      // Execute command through the AI service
-      const response = await onExecuteCommand(command);
+      // Add to app context terminal
+      addTerminalLine({
+        text: command,
+        type: 'command'
+      });
       
-      // Parse and handle the response
-      let formattedResponse = response;
-      try {
-        const parsedResponse = JSON.parse(response);
-        formattedResponse = parsedResponse.output || response;
-      } catch (e) {
-        // If not JSON, use raw response
+      if (onExecuteCommand) {
+        // Execute command through the AI service
+        const response = await onExecuteCommand(command);
+        
+        // Parse and handle the response
+        let formattedResponse = response;
+        try {
+          const parsedResponse = JSON.parse(response);
+          formattedResponse = parsedResponse.output || response;
+        } catch (e) {
+          // If not JSON, use raw response
+        }
+        
+        // Add response to history
+        setHistory(prev => [...prev, { 
+          type: 'response', 
+          content: formattedResponse
+        }]);
+        
+        // Add to app context terminal
+        addTerminalLine({
+          text: formattedResponse,
+          type: 'output'
+        });
+      } else {
+        // No execute function provided
+        setHistory(prev => [...prev, { 
+          type: 'response', 
+          content: 'Command execution not available in this context'
+        }]);
+        
+        // Add to app context terminal
+        addTerminalLine({
+          text: 'Command execution not available in this context',
+          type: 'error'
+        });
       }
-      
-      // Add response to history
-      setHistory(prev => [...prev, { 
-        type: 'response', 
-        content: formattedResponse
-      }]);
       
       // Clear command
       setCommand('');
     } catch (error) {
       console.error('Error executing command:', error);
+      
+      const errorMessage = `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`;
+      
       setHistory(prev => [...prev, { 
         type: 'response', 
-        content: `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}` 
+        content: errorMessage
       }]);
+      
+      // Add to app context terminal
+      addTerminalLine({
+        text: errorMessage,
+        type: 'error'
+      });
     } finally {
       setIsExecuting(false);
       inputRef.current?.focus();
@@ -75,8 +112,9 @@ const TerminalIntegration: React.FC<TerminalIntegrationProps> = ({ onExecuteComm
     }
   };
 
-  const clearTerminal = () => {
+  const handleClearTerminal = () => {
     setHistory([]);
+    clearAppTerminal();
   };
 
   const copyToClipboard = () => {
@@ -111,7 +149,7 @@ const TerminalIntegration: React.FC<TerminalIntegrationProps> = ({ onExecuteComm
           <Button
             variant="ghost"
             size="icon"
-            onClick={clearTerminal}
+            onClick={handleClearTerminal}
             className="h-8 w-8 text-red-500"
             title="Limpiar terminal"
           >
