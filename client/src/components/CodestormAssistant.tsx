@@ -23,6 +23,9 @@ import TerminalView from './TerminalView';
 import ModelSelector from './ModelSelector';
 import AgentSelector from './AgentSelector';
 import { motion, AnimatePresence } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 export interface CodestormAssistantProps {
   isOpen?: boolean;
@@ -55,11 +58,6 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
     currentConversation
   } = useAppContext();
   
-  // Importación de bibliotecas para renderizar Markdown y resaltar código
-  import ReactMarkdown from 'react-markdown';
-  import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-  import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
-
   // Handlers
   const handleSendMessage = async () => {
     if (!message.trim() || isProcessing) return;
