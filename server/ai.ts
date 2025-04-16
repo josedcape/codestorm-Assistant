@@ -66,11 +66,16 @@ Responde siempre en español y ofrece soluciones técnicas avanzadas con ejemplo
 
   try {
     console.log("Enviando solicitud a OpenAI...");
+    
+    // Verificar que la clave API sea válida
+    if (!apiKey || apiKey === 'your-openai-api-key' || apiKey.startsWith('sk-proj-')) {
+      throw new Error('La clave API de OpenAI no es válida. Por favor, configura una clave válida en el archivo .env');
+    }
 
     const response = await axios.post(
       "https://api.openai.com/v1/chat/completions",
       {
-        model: "gpt-4o",
+        model: "gpt-4",  // Cambiado de gpt-4o a gpt-4
         messages,
         temperature: 0.7,
         max_tokens: 1000,
