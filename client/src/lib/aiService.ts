@@ -172,10 +172,17 @@ export async function generateAIResponse(
   agentType?: AgentType
 ): Promise<string> {
   try {
+    const openaiKey = localStorage.getItem('openai_api_key');
+    const anthropicKey = localStorage.getItem('anthropic_api_key');
+    const geminiKey = localStorage.getItem('google_api_key');
+
     const response = await fetch('/api/ai/generate', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'x-openai-key': openaiKey || '',
+        'x-anthropic-key': anthropicKey || '',
+        'x-gemini-key': geminiKey || ''
       },
       body: JSON.stringify({
         model,

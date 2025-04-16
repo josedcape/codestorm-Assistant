@@ -7,10 +7,10 @@ async function generateOpenAIResponse(
   code?: string,
   agentType?: string,
 ) {
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = process.env.OPENAI_API_KEY || req.headers['x-openai-key'];
   if (!apiKey) {
     throw new Error(
-      "❌ API key de OpenAI no configurada. Por favor, configura tu clave API en la sección de Secrets.",
+      "❌ API key de OpenAI no configurada. Por favor, configura tu clave API en la configuración.",
     );
   }
 
