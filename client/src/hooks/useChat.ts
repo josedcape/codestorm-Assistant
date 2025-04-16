@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { useAIService } from '@/lib/aiService';
+import { aiService } from '@/lib/aiService';
 
 export interface Message {
   id: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
   timestamp: Date;
+  code?: string;
+  language?: string;
 }
 
 export function useChat() {
@@ -18,9 +20,8 @@ export function useChat() {
     }
   ]);
   const [isProcessing, setIsProcessing] = useState(false);
-  const { generateResponse } = useAIService();
 
-  const sendMessage = async (content: string) => {
+  const sendMessage = async (content: string, code?: string, language?: string) => {
     if (!content.trim()) return;
 
     // Agregar mensaje del usuario
@@ -28,7 +29,9 @@ export function useChat() {
       id: Date.now().toString(),
       role: 'user',
       content,
-      timestamp: new Date()
+      timestamp: new Date(),
+      code,
+      language
     };
 
     setMessages(prev => [...prev, userMessage]);
@@ -44,19 +47,17 @@ export function useChat() {
         }));
 
       // Generar respuesta de la IA
-      const response = await generateResponse(content);
+      const responseText = await aiService.generateResponse(content, code);
 
-      if (response) {
-        // Crear mensaje de respuesta
-        const assistantMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          role: 'assistant',
-          content: response.text,
-          timestamp: new Date()
-        };
+      // Crear mensaje de respuesta
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: responseText,
+        timestamp: new Date()
+      };
 
-        setMessages(prev => [...prev, assistantMessage]);
-      }
+      setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error('Error al procesar mensaje:', error);
       
@@ -74,6 +75,15 @@ export function useChat() {
     }
   };
 
+  const executeCommand = async (command: string) => {
+    try {
+      return await aiService.executeCommand(command);
+    } catch (error) {
+      console.error('Error ejecutando comando:', error);
+      throw error;
+    }
+  };
+
   const clearMessages = () => {
     setMessages([{
       id: Date.now().toString(),
@@ -87,6 +97,7 @@ export function useChat() {
     messages,
     sendMessage,
     clearMessages,
-    isProcessing
+    isProcessing,
+    executeCommand
   };
 }

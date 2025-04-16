@@ -1,13 +1,41 @@
-import React, { useState, useEffect } from 'react';
-import TopBar from '@/components/TopBar';
-import Sidebar from '@/components/Sidebar';
+import React, { useState, useEffect, useRef } from 'react';
+import Header from '@/components/Header';
+import FileExplorer from '@/components/FileExplorer';
 import EditorContainer from '@/components/EditorContainer';
 import { EditorProvider } from '@/hooks/useEditor';
 import CodestormAssistant from '@/components/CodestormAssistant';
+import StatusBar from '@/components/StatusBar';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useAppContext } from '@/context/AppContext';
+import { Bot, X, Menu } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger
+} from '@/components/ui/sheet';
 
 const Home: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [assistantOpen, setAssistantOpen] = useState(false);
+  const [terminalVisible, setTerminalVisible] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const isMobile = useIsMobile();
+  
+  // Simulación de inicio de proyecto
+  const projectInitializedRef = useRef(false);
+  const { startNewProject } = useAppContext();
+  
+  useEffect(() => {
+    if (!projectInitializedRef.current) {
+      projectInitializedRef.current = true;
+      // Inicializar proyecto si fuera necesario
+      if (startNewProject) {
+        startNewProject();
+      }
+    }
+  }, [startNewProject]);
   
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -35,27 +63,119 @@ const Home: React.FC = () => {
     };
   }, []);
   
+  // Simulación de abrir un archivo
+  const handleOpenFile = (path: string, name: string) => {
+    console.log(`Abriendo archivo ${name} en ${path}`);
+  };
+  
   return (
     <EditorProvider>
-      <div className="h-screen flex flex-col bg-background">
-        <TopBar 
-          toggleSidebar={toggleSidebar} 
+      <div className="h-screen flex flex-col bg-slate-950 text-white overflow-hidden">
+        <Header 
+          toggleFileExplorer={toggleSidebar} 
           toggleAIAssistant={toggleAssistant}
         />
         
-        <div 
-          className={`flex flex-1 overflow-hidden ${sidebarOpen ? 'sidebar-open' : ''}`} 
-          id="main-container"
-        >
-          <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-          <EditorContainer />
+        <div className="flex flex-1 overflow-hidden">
+          {/* Explorador de archivos */}
+          {sidebarOpen && !isMobile && (
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <FileExplorer onOpenFile={handleOpenFile} />
+            </motion.div>
+          )}
           
-          {/* Panel del asistente flotante */}
-          <CodestormAssistant 
-            isOpen={assistantOpen} 
-            onClose={() => setAssistantOpen(false)} 
-          />
+          {/* Editor de código (centro) */}
+          <div className="flex-grow overflow-hidden">
+            <EditorContainer />
+          </div>
+          
+          {/* Panel del asistente (derecha) */}
+          <AnimatePresence>
+            {assistantOpen && !isMobile && (
+              <CodestormAssistant 
+                isOpen={assistantOpen} 
+                onClose={() => setAssistantOpen(false)} 
+              />
+            )}
+          </AnimatePresence>
         </div>
+        
+        {/* Barra de estado */}
+        <StatusBar 
+          showTerminal={terminalVisible}
+          toggleTerminal={() => setTerminalVisible(!terminalVisible)}
+          language="javascript"
+          line={10}
+          column={25}
+        />
+        
+        {/* UI Móvil */}
+        {isMobile && (
+          <>
+            {/* Menú lateral para explorador en móvil */}
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button 
+                  className="fixed top-16 left-4 h-10 w-10 rounded-full bg-blue-600 shadow-lg md:hidden"
+                  onClick={() => setMobileMenuOpen(true)}
+                >
+                  <Menu size={18} />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[85%] p-0 bg-slate-900 border-r border-slate-800">
+                <FileExplorer 
+                  onOpenFile={(path, name) => {
+                    handleOpenFile(path, name);
+                    setMobileMenuOpen(false);
+                  }} 
+                />
+              </SheetContent>
+            </Sheet>
+            
+            {/* Botón flotante para mostrar asistente en móvil */}
+            <Button 
+              className="fixed bottom-6 right-6 h-12 w-12 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg"
+              onClick={toggleAssistant}
+            >
+              {assistantOpen ? <X size={20} /> : <Bot size={20} />}
+            </Button>
+            
+            {/* Panel de asistente en modo móvil */}
+            <AnimatePresence>
+              {assistantOpen && isMobile && (
+                <motion.div
+                  initial={{ y: '100%' }}
+                  animate={{ y: 0 }}
+                  exit={{ y: '100%' }}
+                  transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                  className="fixed inset-0 top-auto h-[80vh] bg-slate-900 border-t border-slate-800 rounded-t-xl overflow-hidden z-50"
+                >
+                  <div className="absolute top-2 right-2">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => setAssistantOpen(false)}
+                      className="h-6 w-6 rounded-full"
+                    >
+                      <X size={16} />
+                    </Button>
+                  </div>
+                  <div className="h-full pt-6">
+                    <CodestormAssistant 
+                      isOpen={true}
+                      onClose={() => setAssistantOpen(false)}
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </>
+        )}
       </div>
     </EditorProvider>
   );
