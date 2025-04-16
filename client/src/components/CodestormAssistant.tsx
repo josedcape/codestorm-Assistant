@@ -81,7 +81,7 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [newConversationTitle, setNewConversationTitle] = useState('');
-  
+
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const isMobile = useMediaQuery('(max-width: 768px)');
   const { toast } = useToast();
@@ -101,7 +101,7 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
     clearConversation,
     executeCommand
   } = useAppContext();
-  
+
   // Cargar conversaciones guardadas
   useEffect(() => {
     const savedConversations = localStorage.getItem('codestorm_conversations');
@@ -130,13 +130,13 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
       localStorage.setItem('codestorm_conversations', JSON.stringify(conversations));
     }
   }, [conversations]);
-  
+
   // Handlers
   const handleSendMessage = async () => {
     if (!message.trim() || isProcessing) return;
-    
+
     setIsProcessing(true);
-    
+
     try {
       // Agregar mensaje del usuario
       const userContent = message;
@@ -146,9 +146,9 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
         editorTab?.content,
         editorTab?.language
       );
-      
+
       setMessage('');
-      
+
       // Enviar petición a la API según el modelo seleccionado
       const response = await fetch('/api/ai/generate', {
         method: 'POST',
@@ -162,9 +162,9 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
           agent: currentAgent
         }),
       });
-      
+
       const data = await response.json();
-      
+
       if (response.ok) {
         // Agregar respuesta del asistente
         addMessage(
@@ -217,7 +217,7 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
       file.type.includes('xml') ? 'xml' :
       'text'
     );
-    
+
     setShowFileUpload(false);
   };
 
@@ -262,17 +262,17 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
 
   const saveConversation = () => {
     if (!newConversationTitle.trim()) return;
-    
+
     const newConversation: Conversation = {
       id: Date.now().toString(),
       title: newConversationTitle,
       date: new Date(),
       messages: currentConversation?.messages || []
     };
-    
+
     setConversations(prev => [newConversation, ...prev]);
     setShowSaveDialog(false);
-    
+
     toast({
       title: "Conversación guardada",
       description: "La conversación se ha guardado correctamente"
@@ -322,7 +322,7 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
   const filteredConversations = conversations.filter(conv => 
     conv.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
-  
+
   return (
     <motion.div
       initial={{ opacity: 0, x: 300 }}
@@ -373,7 +373,7 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
           </Button>
         </div>
       </div>
-      
+
       {/* Panel lateral de conversaciones */}
       <div className="flex flex-1 overflow-hidden">
         <AnimatePresence>
@@ -405,7 +405,7 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
                   )}
                 </div>
               </div>
-              
+
               <ScrollArea className="flex-1">
                 <div className="p-2 space-y-1">
                   {filteredConversations.length === 0 ? (
@@ -445,7 +445,7 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
                   )}
                 </div>
               </ScrollArea>
-              
+
               <div className="p-3 border-t border-slate-800">
                 <Button
                   variant="default"
@@ -460,7 +460,7 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
             </motion.div>
           )}
         </AnimatePresence>
-        
+
         {/* Contenido principal */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Pestañas */}
@@ -479,7 +479,7 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
                 Terminal
               </TabsTrigger>
             </TabsList>
-            
+
             {/* Contenido de Chat */}
             <TabsContent value="chat" className="flex-1 flex flex-col p-4 overflow-hidden">
               {/* Configuración del modelo */}
@@ -491,7 +491,7 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
                   onDevelopmentModeChange={setDevelopmentMode}
                 />
               </div>
-              
+
               {/* Selector de agente */}
               <div className="mb-4">
                 <AgentSelector 
@@ -499,7 +499,7 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
                   onAgentChange={setCurrentAgent}
                 />
               </div>
-              
+
               {/* Mensajes */}
               <div 
                 ref={chatContainerRef}
@@ -528,7 +528,7 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
                             <span className="text-xs font-medium">CODESTORM AI</span>
                           </div>
                         )}
-                        
+
                         <div className="text-sm whitespace-pre-wrap">
                           <ReactMarkdown
                             components={{
@@ -554,13 +554,13 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
                             {msg.content}
                           </ReactMarkdown>
                         </div>
-                        
+
                         {msg.code && (
                           <div className="mt-2 bg-slate-950 rounded p-2 text-xs font-mono overflow-x-auto">
                             <pre>{msg.code}</pre>
                           </div>
                         )}
-                        
+
                         {/* Botón de copiar */}
                         <Button
                           variant="ghost"
@@ -579,7 +579,7 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
                     </div>
                   ))
                 )}
-                
+
                 {isProcessing && (
                   <div className="flex justify-start">
                     <div className="bg-slate-800 rounded-lg p-3 max-w-[80%] rounded-tl-none">
@@ -597,7 +597,7 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
                   </div>
                 )}
               </div>
-              
+
               {/* Entrada de texto */}
               <div className="mt-4">
                 <AnimatePresence>
@@ -611,7 +611,7 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
                       <VoiceRecognition onTranscript={handleVoiceInput} />
                     </motion.div>
                   )}
-                  
+
                   {showFileUpload && (
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
@@ -623,7 +623,7 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
                     </motion.div>
                   )}
                 </AnimatePresence>
-                
+
                 <div className="relative">
                   <Textarea
                     value={message}
@@ -633,7 +633,7 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
                     className="min-h-[80px] pr-[90px] bg-slate-800 border-slate-700 resize-none"
                     disabled={isProcessing}
                   />
-                  
+
                   <div className="absolute bottom-2 right-2 flex space-x-1">
                     <Button
                       onClick={() => {
@@ -647,7 +647,7 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
                     >
                       <Mic size={16} />
                     </Button>
-                    
+
                     <Button
                       onClick={() => {
                         setShowFileUpload(!showFileUpload);
@@ -660,7 +660,7 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
                     >
                       <Upload size={16} />
                     </Button>
-                    
+
                     <Button
                       onClick={handleSendMessage}
                       disabled={!message.trim() || isProcessing}
@@ -675,7 +675,7 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
                 </div>
               </div>
             </TabsContent>
-            
+
             {/* Contenido de Código */}
             <TabsContent value="code" className="flex-1 overflow-hidden p-4">
               <div className="flex flex-col h-full">
@@ -711,7 +711,7 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
                 )}
               </div>
             </TabsContent>
-            
+
             {/* Contenido de Terminal */}
             <TabsContent value="terminal" className="flex-1 overflow-hidden p-4">
               <div className="flex flex-col h-full">
@@ -758,7 +758,7 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
           </Tabs>
         </div>
       </div>
-      
+
       {/* Diálogo para guardar conversación */}
       <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
         <DialogContent className="bg-slate-900 border-slate-800">
