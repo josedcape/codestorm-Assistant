@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { AIModel, MODEL_INFO, DevelopmentMode } from '@/lib/aiService';
 import { 
@@ -14,6 +13,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button"; // Assuming this component exists
 
 interface ModelSelectorProps {
   selectedModel?: string;
@@ -23,6 +23,7 @@ interface ModelSelectorProps {
   developmentMode?: DevelopmentMode;
   autonomousMode?: boolean;
   onAutonomousModeChange?: (enabled: boolean) => void;
+  showNoApiWarning?: boolean; // Added to control the alert
 }
 
 export default function ModelSelector({
@@ -30,6 +31,7 @@ export default function ModelSelector({
   onModelChange,
   developmentMode = 'interactive',
   onDevelopmentModeChange,
+  showNoApiWarning = false, // Added default value
 }: ModelSelectorProps) {
   const handleModelChange = (value: string) => {
     if (onModelChange) {
@@ -119,22 +121,37 @@ export default function ModelSelector({
             </SelectGroup>
           </SelectContent>
         </Select>
-        
+
         <div className="text-xs text-slate-400 mt-1">
           {MODEL_INFO[currentModel as AIModel]?.description}
         </div>
       </div>
-      
-      {currentModelInfo && !apiKeyStatus[currentModelInfo.id] && (
+
+      {showNoApiWarning && ( // Using showNoApiWarning to conditionally render the alert
         <Alert variant="warning" className="bg-amber-900/30 border-amber-700">
           <AlertCircle className="h-4 w-4 text-amber-400" />
-          <AlertDescription>
-            No hay clave API configurada para {currentModelInfo.name}. 
-            Configúrala en la pestaña API Keys.
+          <AlertDescription className="flex flex-col space-y-2">
+            <span>No hay clave API configurada para {currentModelInfo?.name || currentModel}.</span>
+            <span>
+              Las claves API deben configurarse tanto en la configuración del navegador como
+              en las variables de entorno del servidor para funcionar correctamente.
+            </span>
+            <div className="mt-2">
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => {
+                  const apiSection = document.getElementById('api-keys-section');
+                  if (apiSection) apiSection.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
+                Ir a configuración de API Keys
+              </Button>
+            </div>
           </AlertDescription>
         </Alert>
       )}
-      
+
       <div className="flex items-center justify-between">
         <div>
           <Label htmlFor="autonomous-mode" className="text-sm font-medium">

@@ -181,7 +181,7 @@ export async function generateAIResponse(
   try {
     const openaiKey = localStorage.getItem('openai_api_key');
     const anthropicKey = localStorage.getItem('anthropic_api_key');
-    const geminiKey = localStorage.getItem('google_api_key');e.getItem('google_api_key');
+    const geminiKey = localStorage.getItem('google_api_key');
 
     const response = await fetch('/api/ai/generate', {
       method: 'POST',

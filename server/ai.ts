@@ -249,20 +249,42 @@ export async function handleAIGenerate(req: Request, res: Response) {
       `Generando respuesta con modelo ${model} y agente ${agentType || "default"}. Prompt: ${prompt.substring(0, 50)}...`,
     );
 
-    // Obtener claves API de los headers
+    // Obtener claves API de los headers, localStorage o variables de entorno
     const openaiKey = req.headers['x-openai-key'] || process.env.OPENAI_API_KEY;
     const anthropicKey = req.headers['x-anthropic-key'] || process.env.ANTHROPIC_API_KEY;
     const geminiKey = req.headers['x-gemini-key'] || process.env.GEMINI_API_KEY;
 
+    // Mostrar información sobre las claves para depuración
+    console.log("API Keys disponibles:");
+    console.log("OpenAI:", openaiKey ? "Configurada" : "No configurada");
+    console.log("Anthropic:", anthropicKey ? "Configurada" : "No configurada");
+    console.log("Gemini:", geminiKey ? "Configurada" : "No configurada");
+    
     let response: string;
 
     try {
+      // Comprobar disponibilidad de modelos
+      const modelos_disponibles = [];
+      if (openaiKey) modelos_disponibles.push("gpt-4o");
+      if (geminiKey) modelos_disponibles.push("gemini-2.5");
+      if (anthropicKey) modelos_disponibles.push("claude-3-7", "claude-3-5-sonnet-v2");
+      
+      console.log("Modelos disponibles:", modelos_disponibles);
+      console.log("Modelo solicitado:", model);
+      
+      // Si el modelo solicitado no está disponible, usar un modelo alternativo
+      if (!modelos_disponibles.includes(model) && modelos_disponibles.length > 0) {
+        const modelo_alternativo = modelos_disponibles[0];
+        console.log(`Modelo ${model} no disponible, usando alternativa: ${modelo_alternativo}`);
+        model = modelo_alternativo;
+      }
+      
       switch (model) {
         case "gpt-4o":
           if (!openaiKey) {
             return res
               .status(400)
-              .json({ error: "API key de OpenAI no configurada" });
+              .json({ error: "API key de OpenAI no configurada. Por favor, configura la clave en la sección de API Keys." });
           }
           response = await generateOpenAIResponse(prompt, code, agentType, openaiKey.toString());
           break;
@@ -270,7 +292,7 @@ export async function handleAIGenerate(req: Request, res: Response) {
           if (!geminiKey) {
             return res
               .status(400)
-              .json({ error: "API key de Gemini no configurada" });
+              .json({ error: "API key de Gemini no configurada. Por favor, configura la clave en la sección de API Keys." });
           }
           response = await generateGeminiResponse(prompt, code);
           break;
@@ -279,7 +301,7 @@ export async function handleAIGenerate(req: Request, res: Response) {
           if (!anthropicKey) {
             return res
               .status(400)
-              .json({ error: "API key de Anthropic no configurada" });
+              .json({ error: "API key de Anthropic no configurada. Por favor, configura la clave en la sección de API Keys." });
           }
           const claudeModel =
             model === "claude-3-7"

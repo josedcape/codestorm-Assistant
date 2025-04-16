@@ -144,8 +144,16 @@ const ApiKeyConfig: React.FC = () => {
       </Button>
       
       <p className="text-xs text-muted-foreground text-center">
-        Las claves API se almacenan de forma segura en tu navegador y no se envían a ningún servidor.
+        Las claves API se almacenan de forma segura en tu navegador y se envían con cada solicitud.
+        Para un funcionamiento completo, también debes configurar estas claves en las variables de entorno del servidor.
       </p>
+      <div className="mt-4 p-2 bg-slate-100 dark:bg-slate-800 rounded text-xs">
+        <p className="font-medium mb-1">Variables de entorno del servidor:</p>
+        <p><code>OPENAI_API_KEY</code> - Para GPT-4.0</p>
+        <p><code>ANTHROPIC_API_KEY</code> - Para Claude</p>
+        <p><code>GEMINI_API_KEY</code> - Para Gemini</p>
+        <p className="mt-2">Estas deben configurarse en las variables de entorno (Secrets) del Repl.</p>
+      </div>
     </div>
   );
 };
