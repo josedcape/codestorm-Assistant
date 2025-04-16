@@ -128,7 +128,7 @@ async function generateClaudeResponse(prompt: string, code?: string, model: stri
       model: model,
       max_tokens: 1000,
       temperature: 0.7,
-      system: "Eres un asistente de programación experto. Responde en español.",
+      system: "Actúa como un desarrollador altamente capacitado que puede ayudar, hacer recomendaciones y sugerencias para desarrollar de la forma más eficiente aplicaciones según las indicaciones del usuario. Tienes la capacidad de crear archivos, carpetas y ejecutar comandos en la terminal. Ofrece siempre soluciones prácticas y eficientes. Responde siempre en español.",
       messages: [
         {
           role: "user",

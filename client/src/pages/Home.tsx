@@ -153,23 +153,25 @@ const Home: React.FC = () => {
                   animate={{ y: 0 }}
                   exit={{ y: '100%' }}
                   transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                  className="fixed inset-0 top-auto h-[80vh] bg-slate-900 border-t border-slate-800 rounded-t-xl overflow-hidden z-50"
+                  className="fixed inset-0 bg-slate-900/95 backdrop-blur-sm z-50 overflow-hidden"
                 >
-                  <div className="absolute top-2 right-2">
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={() => setAssistantOpen(false)}
-                      className="h-6 w-6 rounded-full"
-                    >
-                      <X size={16} />
-                    </Button>
-                  </div>
-                  <div className="h-full pt-6">
-                    <CodestormAssistant 
-                      isOpen={true}
-                      onClose={() => setAssistantOpen(false)}
-                    />
+                  <div className="h-full w-full flex flex-col">
+                    <div className="flex items-center justify-end p-2 bg-slate-800">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => setAssistantOpen(false)}
+                        className="h-8 w-8"
+                      >
+                        <X size={18} />
+                      </Button>
+                    </div>
+                    <div className="flex-1 overflow-hidden">
+                      <CodestormAssistant 
+                        isOpen={true}
+                        onClose={() => setAssistantOpen(false)}
+                      />
+                    </div>
                   </div>
                 </motion.div>
               )}

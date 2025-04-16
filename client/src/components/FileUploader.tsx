@@ -17,7 +17,7 @@ export default function FileUploader({ onFileUploaded }: FileUploaderProps) {
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     if (e.type === 'dragenter' || e.type === 'dragover') {
       setDragActive(true);
     } else if (e.type === 'dragleave') {
@@ -29,7 +29,7 @@ export default function FileUploader({ onFileUploaded }: FileUploaderProps) {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       processFile(e.dataTransfer.files[0]);
     }
@@ -47,40 +47,53 @@ export default function FileUploader({ onFileUploaded }: FileUploaderProps) {
 
   const processFile = async (file: File) => {
     setError(null);
-    
+
     // Validar tipo de archivo
-    const validTypes = ['text/plain', 'text/javascript', 'application/javascript', 
+    const validTypes = [
+      'text/plain', 'text/javascript', 'application/javascript', 
       'application/json', 'text/html', 'text/css', 'text/typescript', 
-      'application/typescript', 'text/markdown'];
-    
+      'application/typescript', 'text/markdown', 'text/csv', 'text/xml',
+      'application/xml', 'application/x-yaml', 'text/yaml',
+      'application/pdf', 'application/msword', 
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    ];
+
     // También permitir archivos por extensión para sistema operativos que no detectan bien el MIME type
-    const validExtensions = ['.js', '.jsx', '.ts', '.tsx', '.html', '.css', '.json', '.md', '.txt', '.py'];
+    const validExtensions = [
+      '.js', '.jsx', '.ts', '.tsx', '.html', '.css', '.json', '.md', '.txt', '.py',
+      '.xml', '.svg', '.csv', '.yaml', '.yml', '.sh', '.bat', '.ps1', '.sql',
+      '.c', '.cpp', '.h', '.cs', '.java', '.php', '.rb', '.go', '.rs', '.swift',
+      '.dart', '.kt', '.lua', '.r', '.pl', '.dockerfile', '.gitignore',
+      '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.pdf'
+    ];
     const fileExtension = '.' + file.name.split('.').pop();
-    
+
     const isValidType = validTypes.includes(file.type) || 
                         validExtensions.some(ext => fileExtension.toLowerCase() === ext);
-    
+
     if (!isValidType) {
       setError('Tipo de archivo no soportado. Por favor sube un archivo de texto o código.');
       return;
     }
-    
+
     // Validar tamaño (máx. 1MB)
     if (file.size > 1024 * 1024) {
       setError('El archivo es demasiado grande. Límite: 1MB');
       return;
     }
-    
+
     try {
       setIsLoading(true);
       setFile(file);
-      
+
       // Leer contenido del archivo
       const content = await readFileContent(file);
-      
+
       // Llamar callback
       onFileUploaded(file, content);
-      
+
       // Reiniciar
       setFile(null);
       if (inputRef.current) inputRef.current.value = '';
@@ -95,7 +108,7 @@ export default function FileUploader({ onFileUploaded }: FileUploaderProps) {
   const readFileContent = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      
+
       reader.onload = (event) => {
         if (event.target?.result) {
           resolve(event.target.result as string);
@@ -103,11 +116,11 @@ export default function FileUploader({ onFileUploaded }: FileUploaderProps) {
           reject(new Error('Error al leer el archivo.'));
         }
       };
-      
+
       reader.onerror = () => {
         reject(new Error('Error al leer el archivo.'));
       };
-      
+
       reader.readAsText(file);
     });
   };
@@ -121,15 +134,15 @@ export default function FileUploader({ onFileUploaded }: FileUploaderProps) {
   return (
     <div className="flex flex-col">
       <h3 className="font-medium text-sm mb-3">Subir Archivo</h3>
-      
+
       <input
         ref={inputRef}
         type="file"
         className="hidden"
         onChange={handleFileChange}
-        accept=".js,.jsx,.ts,.tsx,.html,.css,.json,.md,.txt,.py"
+        accept=".js,.jsx,.ts,.tsx,.html,.css,.json,.md,.txt,.py,.xml,.svg,.csv,.yaml,.yml,.sh,.bat,.ps1,.sql,.c,.cpp,.h,.cs,.java,.php,.rb,.go,.rs,.swift,.dart,.kt,.lua,.r,.pl,.dockerfile,.gitignore,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.pdf"
       />
-      
+
       <div
         className={`
           border-2 border-dashed rounded-md p-4 transition-colors text-center
@@ -155,7 +168,7 @@ export default function FileUploader({ onFileUploaded }: FileUploaderProps) {
               <p className="text-xs text-slate-400 mb-3">
                 {(file.size / 1024).toFixed(2)} KB
               </p>
-              
+
               {isLoading ? (
                 <motion.div 
                   className="h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full"
@@ -195,13 +208,13 @@ export default function FileUploader({ onFileUploaded }: FileUploaderProps) {
                 Seleccionar archivo
               </Button>
               <p className="text-xs text-slate-500 mt-3">
-                Formatos: .js, .jsx, .ts, .tsx, .html, .css, .json, .md, .txt, .py
+                Formatos: .js, .jsx, .ts, .tsx, .html, .css, .json, .md, .txt, .py, .xml, .svg, .csv, .yaml, .yml, .sh, .bat, .ps1, .sql, .c, .cpp, .h, .cs, .java, .php, .rb, .go, .rs, .swift, .dart, .kt, .lua, .r, .pl, .dockerfile, .gitignore, .doc, .docx, .xls, .xlsx, .ppt, .pptx, .pdf
               </p>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
-      
+
       {error && (
         <div className="flex items-center text-red-500 text-sm mt-2">
           <AlertCircle size={14} className="mr-1 flex-shrink-0" />

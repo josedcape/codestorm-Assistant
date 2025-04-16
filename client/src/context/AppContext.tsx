@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { AIModel, AgentType, DevelopmentMode, Conversation, Message } from '@/lib/aiService';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -41,38 +41,43 @@ interface AppContextType {
   // AI Model settings
   selectedModel: AIModel;
   setSelectedModel: (model: AIModel) => void;
-  
+
   // Agent settings
   currentAgent: AgentType;
   setCurrentAgent: (agent: AgentType) => void;
-  
+
   // Development mode
   developmentMode: DevelopmentMode;
   setDevelopmentMode: (mode: DevelopmentMode) => void;
-  
+
   // Project management
   currentProject: Project | null;
   setCurrentProject: (project: Project | null) => void;
   startNewProject: () => void;
-  
+
   // Editor state
   activeTab: EditorTab | null;
   tabs: EditorTab[];
   openFile: (fileId: string, content: string, language: string, filepath: string, filename: string) => void;
   closeTab: (tabId: string) => void;
   setActiveTab: (tabId: string) => void;
-  
+
   // Terminal management
   terminalLines: TerminalLine[];
   addTerminalLine: (line: TerminalLine) => void;
   clearTerminal: () => void;
-  
+
   // Conversations management
   conversations: Conversation[];
   currentConversation: Conversation | null;
   startNewConversation: () => void;
   addMessage: (content: string, role: 'user' | 'assistant' | 'system', code?: string, language?: string) => void;
-  
+  saveConversation: (title: string) => void;
+  loadConversation: (conversation: Conversation) => void;
+  clearConversation: () => void;
+  deleteConversation: (id: string) => void;
+  getSavedConversations: () => Conversation[];
+
   // UI State
   showFileExplorer: boolean;
   setShowFileExplorer: (show: boolean) => void;
@@ -92,11 +97,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   // Project state
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
-  
+
   // Editor state
   const [tabs, setTabs] = useState<EditorTab[]>([]);
   const [activeTab, setActiveTabState] = useState<EditorTab | null>(null);
-  
+
   // Terminal state
   const [terminalLines, setTerminalLines] = useState<TerminalLine[]>([
     {
@@ -104,11 +109,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       type: 'output'
     }
   ]);
-  
+
   // Conversations state
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
-  
+  const [savedConversations, setSavedConversations] = useState<Conversation[]>([]);
+
   // UI State
   const [showFileExplorer, setShowFileExplorer] = useState(true);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
@@ -127,7 +133,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       }
     ]);
   };
-  
+
   // Editor functions
   const openFile = (fileId: string, content: string, language: string, filepath: string, filename: string) => {
     // Check if tab already exists
@@ -136,7 +142,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setActiveTabState(existingTab);
       return;
     }
-    
+
     // Create new tab
     const newTab: EditorTab = {
       id: fileId,
@@ -146,29 +152,29 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       filename,
       isDirty: false
     };
-    
+
     setTabs(prev => [...prev, newTab]);
     setActiveTabState(newTab);
   };
-  
+
   const closeTab = (tabId: string) => {
     // Remove tab
     const updatedTabs = tabs.filter(tab => tab.id !== tabId);
     setTabs(updatedTabs);
-    
+
     // If closed tab was active, set a new active tab
     if (activeTab?.id === tabId) {
       setActiveTabState(updatedTabs.length > 0 ? updatedTabs[updatedTabs.length - 1] : null);
     }
   };
-  
+
   const setActiveTab = (tabId: string) => {
     const tab = tabs.find(t => t.id === tabId);
     if (tab) {
       setActiveTabState(tab);
     }
   };
-  
+
   // Project functions
   const startNewProject = () => {
     const newProject: Project = {
@@ -209,9 +215,9 @@ class App {
         }
       ]
     };
-    
+
     setCurrentProject(newProject);
-    
+
     // Open the first file
     const firstFile = newProject.files[0];
     openFile(
@@ -222,7 +228,7 @@ class App {
       firstFile.name
     );
   };
-  
+
   // Conversation functions
   const startNewConversation = () => {
     const newConversation: Conversation = {
@@ -232,16 +238,16 @@ class App {
       date: new Date(),
       model: selectedModel
     };
-    
+
     setConversations(prev => [newConversation, ...prev]);
     setCurrentConversation(newConversation);
   };
-  
+
   const addMessage = (content: string, role: 'user' | 'assistant' | 'system', code?: string, language?: string) => {
     if (!currentConversation) {
       startNewConversation();
     }
-    
+
     const newMessage: Message = {
       id: uuidv4(),
       content,
@@ -250,10 +256,10 @@ class App {
       code,
       language
     };
-    
+
     setCurrentConversation(prev => {
       if (!prev) return null;
-      
+
       const updatedMessages = [...prev.messages, newMessage];
       const updatedConversation = {
         ...prev,
@@ -263,17 +269,55 @@ class App {
           ? content.substring(0, 30) + (content.length > 30 ? '...' : '') 
           : prev.title
       };
-      
+
       // Update in conversations list
       setConversations(prevConvs => 
         prevConvs.map(conv => 
           conv.id === updatedConversation.id ? updatedConversation : conv
         )
       );
-      
+
       return updatedConversation;
     });
   };
+
+  //Load and save conversations to local storage
+  useEffect(() => {
+    const saved = localStorage.getItem('codestorm_conversations');
+    if (saved) {
+      try {
+        setSavedConversations(JSON.parse(saved));
+      } catch (error) {
+        console.error('Error loading conversations:', error);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('codestorm_conversations', JSON.stringify(savedConversations));
+  }, [savedConversations]);
+
+
+  const saveConversation = (title: string) => {
+    if (!currentConversation || currentConversation.messages.length === 0) return;
+    const conversationToSave = { ...currentConversation, title, timestamp: new Date() };
+    setSavedConversations([...savedConversations, conversationToSave]);
+  };
+
+  const loadConversation = (conversation: Conversation) => {
+    setCurrentConversation({ ...conversation, timestamp: new Date() });
+  };
+
+  const clearConversation = () => {
+    setCurrentConversation({ id: uuidv4(), title: 'Nueva conversación', messages: [], date: new Date() });
+  };
+
+  const deleteConversation = (id: string) => {
+    setSavedConversations(savedConversations.filter(conv => conv.id !== id));
+  };
+
+  const getSavedConversations = () => savedConversations;
+
 
   return (
     <AppContext.Provider
@@ -299,6 +343,11 @@ class App {
         currentConversation,
         startNewConversation,
         addMessage,
+        saveConversation,
+        loadConversation,
+        clearConversation,
+        deleteConversation,
+        getSavedConversations,
         showFileExplorer,
         setShowFileExplorer,
         showAIAssistant,
