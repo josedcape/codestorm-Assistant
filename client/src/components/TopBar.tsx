@@ -13,12 +13,12 @@ import { CodestormAssistantButton } from './CodestormAssistant';
 
 interface TopBarProps {
   toggleSidebar: () => void;
+  toggleAIAssistant?: () => void;
 }
 
-const TopBar: React.FC<TopBarProps> = ({ toggleSidebar }) => {
+const TopBar: React.FC<TopBarProps> = ({ toggleSidebar, toggleAIAssistant }) => {
   const { settings, updateSettings, createNewFile, saveCurrentFile, openFile } = useEditor();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [showAssistant, setShowAssistant] = useState(false);
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
@@ -29,10 +29,6 @@ const TopBar: React.FC<TopBarProps> = ({ toggleSidebar }) => {
       ...settings,
       theme: settings.theme === 'dark' ? 'light' : 'dark',
     });
-  };
-
-  const toggleAssistant = () => {
-    setShowAssistant(!showAssistant);
   };
 
   return (
@@ -70,7 +66,7 @@ const TopBar: React.FC<TopBarProps> = ({ toggleSidebar }) => {
             <span className="sr-only md:not-sr-only">Compartir</span>
           </Button>
 
-          <CodestormAssistantButton onClick={toggleAssistant} />
+          <CodestormAssistantButton onClick={toggleAIAssistant || (() => {})} />
           
           <Button
             variant="ghost"

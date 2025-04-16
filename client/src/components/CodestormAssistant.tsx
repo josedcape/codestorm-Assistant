@@ -1,219 +1,158 @@
-import React, { useState } from 'react';
-import { Mic, Send, X, Settings, MessageSquare, History, Cog, Play } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Mic, Send, X, Settings, MessageSquare, History, ChevronDown, Play, Bot, Sparkles } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { RobotLogo } from './RobotLogo';
+import ModelSelector, { AIModel } from './ModelSelector';
+import VoiceRecognition from './VoiceRecognition';
+import FileUploader from './FileUploader';
+import ApiKeyConfig from './ApiKeyConfig';
+import ChatInterface from './ChatInterface';
+import TerminalIntegration from './TerminalIntegration';
+import AgentSelector, { AgentType } from './AgentSelector';
+import { useToast } from '@/hooks/use-toast';
 
-// Tipos para los mensajes y modelos de IA
-interface Message {
-  id: string;
-  content: string;
-  role: 'assistant' | 'user';
-  timestamp: Date;
+export interface CodestormAssistantProps {
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
-type AIModel = 'gpt' | 'gemini' | 'claude' | 'custom';
+const CodestormAssistant: React.FC<CodestormAssistantProps> = ({ 
+  isOpen = true,
+  onClose = () => {}
+}) => {
+  const [visible, setVisible] = useState(isOpen);
+  const [activeTab, setActiveTab] = useState('chat');
+  const [selectedModel, setSelectedModel] = useState<AIModel>('gemini-2.5');
+  const [autonomousMode, setAutonomousMode] = useState(false);
+  const [currentAgent, setCurrentAgent] = useState<AgentType>('dev');
+  const { toast } = useToast();
+  
+  useEffect(() => {
+    setVisible(isOpen);
+  }, [isOpen]);
 
-interface ModelOption {
-  id: AIModel;
-  name: string;
-  version: string;
-  date: string;
-}
+  const handleVoiceTranscript = (text: string) => {
+    toast({
+      title: "Transcripción recibida",
+      description: "Procesando: " + (text.length > 50 ? text.substring(0, 50) + "..." : text),
+    });
+  };
 
-const CodestormAssistant: React.FC = () => {
-  const [isOpen, setIsOpen] = useState(true);
-  const [activeTab, setActiveTab] = useState<'chat' | 'settings' | 'history'>('chat');
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      content: '¡Hola! Soy tu asistente CODESTORM AI. ¿Cómo puedo ayudarte con tu código hoy?',
-      role: 'assistant',
-      timestamp: new Date(),
-    },
-  ]);
-  const [inputValue, setInputValue] = useState('');
-  const [selectedModel, setSelectedModel] = useState<AIModel>('gemini');
-  const [autoMode, setAutoMode] = useState(false);
-  const [apiKey, setApiKey] = useState('');
+  const handleFileUpload = (file: File, content: string) => {
+    toast({
+      title: "Archivo subido",
+      description: `${file.name} (${(file.size / 1024).toFixed(1)} KB)`,
+    });
+  };
 
-  // Opciones de modelos disponibles
-  const availableModels: ModelOption[] = [
-    { id: 'gpt', name: 'API GPT', version: '4.0', date: 'Mayo 2024' },
-    { id: 'gemini', name: 'Gemini 2.5', version: 'Marzo 2025', date: 'Marzo 2025' },
-    { id: 'claude', name: 'Claude 3.5', version: 'Sonnet', date: 'Febrero 2025' },
-    { id: 'custom', name: 'API Custom', version: 'Personal', date: '' },
-  ];
-
-  const handleSendMessage = () => {
-    if (!inputValue.trim()) return;
-    
-    // Agregar mensaje del usuario
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      content: inputValue,
-      role: 'user',
-      timestamp: new Date()
-    };
-    
-    setMessages(prev => [...prev, userMessage]);
-    setInputValue('');
-    
-    // Simular respuesta del asistente (en una aplicación real, aquí iría la llamada a la API)
-    setTimeout(() => {
-      const botResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        content: 'Estoy procesando tu solicitud. En un momento tendré una respuesta para ti.',
-        role: 'assistant',
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, botResponse]);
-    }, 1000);
+  const handleExecuteCommand = async (command: string): Promise<string> => {
+    // Simulación de ejecución
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    return `Ejecutado: ${command}\nResultado simulado para demostración.`;
   };
 
   return (
-    <div className={`codestorm-assistant-panel ${!isOpen ? 'codestorm-assistant-collapsed' : ''}`}>
+    <div className={`codestorm-assistant-panel ${!visible ? 'codestorm-assistant-collapsed' : ''}`}>
       {/* Header */}
-      <div className="flex items-center justify-between p-3 border-b border-blue-500">
-        <h3 className="font-bold text-lg">CODESTORM AI</h3>
-        <div className="flex items-center gap-2">
-          <button 
-            onClick={() => setIsOpen(false)}
-            className="p-1 rounded-full hover:bg-blue-700 transition-colors"
-          >
-            <X size={18} />
-          </button>
+      <div className="flex items-center justify-between p-3 border-b border-blue-500 bg-card">
+        <div className="flex items-center">
+          <RobotLogo />
+          <h3 className="font-bold text-lg ml-2">CODESTORM AI</h3>
         </div>
-      </div>
-      
-      {/* Tabs */}
-      <div className="flex border-b border-blue-500">
-        <div 
-          className={`codestorm-tab ${activeTab === 'chat' ? 'active' : ''}`}
-          onClick={() => setActiveTab('chat')}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => {
+            setVisible(false);
+            onClose();
+          }}
+          className="rounded-full hover:bg-blue-700/20"
         >
-          Chat
-        </div>
-        <div 
-          className={`codestorm-tab ${activeTab === 'settings' ? 'active' : ''}`}
-          onClick={() => setActiveTab('settings')}
-        >
-          Avanzado
-        </div>
-        <div 
-          className={`codestorm-tab ${activeTab === 'history' ? 'active' : ''}`}
-          onClick={() => setActiveTab('history')}
-        >
-          Historial
-        </div>
+          <X size={18} />
+        </Button>
       </div>
       
       {/* Content */}
-      <div className="flex-1 overflow-hidden">
-        {activeTab === 'chat' && (
-          <div className="codestorm-chat-container">
-            <div className="codestorm-messages">
-              {messages.map(message => (
-                <div 
-                  key={message.id} 
-                  className={`codestorm-message ${message.role === 'assistant' 
-                    ? 'codestorm-message-assistant' 
-                    : 'codestorm-message-user'}`}
-                >
-                  {message.content}
-                </div>
-              ))}
-            </div>
-            
-            <div className="codestorm-input">
-              <input
-                type="text"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                placeholder="Escribe tu mensaje..."
-                className="flex-1"
-              />
-              <button 
-                className="p-1.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white"
-                onClick={handleSendMessage}
-              >
-                <Send size={16} />
-              </button>
-              <button className="p-1.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white">
-                <Mic size={16} />
-              </button>
-            </div>
-          </div>
-        )}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1">
+        <TabsList className="flex justify-start bg-card border-b border-blue-500/30 rounded-none px-2">
+          <TabsTrigger value="chat" className="codestorm-tab data-[state=active]:border-primary data-[state=active]:text-primary">
+            <MessageSquare className="h-4 w-4 mr-2" />
+            Chat
+          </TabsTrigger>
+          <TabsTrigger value="terminal" className="codestorm-tab data-[state=active]:border-primary data-[state=active]:text-primary">
+            <Bot className="h-4 w-4 mr-2" />
+            Terminal
+          </TabsTrigger>
+          <TabsTrigger value="settings" className="codestorm-tab data-[state=active]:border-primary data-[state=active]:text-primary">
+            <Settings className="h-4 w-4 mr-2" />
+            Configuración
+          </TabsTrigger>
+        </TabsList>
         
-        {activeTab === 'settings' && (
-          <div className="p-4 space-y-6">
-            <h4 className="font-semibold text-sm text-muted-foreground">Configuración del Asistente</h4>
-            
-            {/* Selección de modelo */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium mb-1">Modelo AI</label>
-              <div className="grid grid-cols-2 gap-2">
-                {availableModels.map(model => (
-                  <div 
-                    key={model.id}
-                    className={`border ${selectedModel === model.id 
-                      ? 'border-primary bg-blue-900/20' 
-                      : 'border-border'} 
-                      rounded-md p-2 cursor-pointer text-xs`}
-                    onClick={() => setSelectedModel(model.id)}
-                  >
-                    <div className="font-semibold">{model.name}</div>
-                    <div className="text-muted-foreground">{model.version}</div>
-                  </div>
-                ))}
+        <ScrollArea className="flex-1">
+          <TabsContent value="chat" className="p-0 m-0 h-full flex flex-col">
+            <div className="p-4 border-b border-blue-500/20 bg-card/50">
+              <div className="flex items-center">
+                <Sparkles className="h-4 w-4 text-primary mr-2" />
+                <h3 className="text-sm font-medium">Agente Activo: {currentAgent === 'dev' ? 'Desarrollo' : currentAgent === 'arch' ? 'Arquitectura' : 'Avanzado'}</h3>
               </div>
             </div>
-            
-            {/* Modo autónomo */}
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-medium">
-                Modo autónomo (sin confirmaciones)
-              </label>
-              <div 
-                className={`w-10 h-5 rounded-full ${autoMode ? 'bg-blue-600' : 'bg-muted'} 
-                  relative cursor-pointer transition-colors`}
-                onClick={() => setAutoMode(!autoMode)}
-              >
-                <div 
-                  className={`absolute top-0.5 ${autoMode ? 'right-0.5' : 'left-0.5'} 
-                    w-4 h-4 rounded-full bg-white transition-all`}
+            <div className="flex-1">
+              <ChatInterface 
+                onVoiceInput={() => setActiveTab('voice')} 
+                onFileUpload={() => setActiveTab('upload')} 
+              />
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="terminal" className="p-4 m-0">
+            <TerminalIntegration onExecuteCommand={handleExecuteCommand} />
+          </TabsContent>
+          
+          <TabsContent value="voice" className="p-4 m-0">
+            <VoiceRecognition onTranscript={handleVoiceTranscript} />
+            <div className="mt-4">
+              <Button onClick={() => setActiveTab('chat')} className="w-full">
+                Volver al chat
+              </Button>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="upload" className="p-4 m-0">
+            <FileUploader onFileUploaded={handleFileUpload} />
+            <div className="mt-4">
+              <Button onClick={() => setActiveTab('chat')} className="w-full">
+                Volver al chat
+              </Button>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="settings" className="p-4 m-0">
+            <div className="space-y-6">
+              <ModelSelector 
+                currentModel={selectedModel}
+                onModelChange={(model) => setSelectedModel(model as AIModel)}
+                autonomousMode={autonomousMode}
+                onAutonomousModeChange={setAutonomousMode}
+              />
+              
+              <div className="border-t border-blue-500/20 pt-6">
+                <AgentSelector 
+                  currentAgent={currentAgent} 
+                  onAgentChange={setCurrentAgent} 
                 />
               </div>
+              
+              <div className="border-t border-blue-500/20 pt-6">
+                <ApiKeyConfig />
+              </div>
             </div>
-            
-            {/* API Key */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium">API Key personalizada</label>
-              <input
-                type="password"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                placeholder="Ingresa tu API key"
-                className="w-full p-2 border border-border rounded-md bg-card text-sm"
-              />
-              <p className="text-xs text-muted-foreground">
-                Opcional: Configura tu propia API key para utilizar tu cuenta de OpenAI/API.
-              </p>
-            </div>
-          </div>
-        )}
-        
-        {activeTab === 'history' && (
-          <div className="p-4">
-            <h4 className="font-semibold text-sm text-muted-foreground mb-4">Historial de Conversaciones</h4>
-            
-            <div className="space-y-2">
-              <p className="text-xs text-center text-muted-foreground">
-                No hay conversaciones guardadas en el historial.
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
+          </TabsContent>
+        </ScrollArea>
+      </Tabs>
     </div>
   );
 };

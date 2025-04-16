@@ -38,7 +38,10 @@ const Home: React.FC = () => {
   return (
     <EditorProvider>
       <div className="h-screen flex flex-col bg-background">
-        <TopBar toggleSidebar={toggleSidebar} />
+        <TopBar 
+          toggleSidebar={toggleSidebar} 
+          toggleAIAssistant={toggleAssistant}
+        />
         
         <div 
           className={`flex flex-1 overflow-hidden ${sidebarOpen ? 'sidebar-open' : ''}`} 
@@ -46,7 +49,12 @@ const Home: React.FC = () => {
         >
           <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
           <EditorContainer />
-          <CodestormAssistant />
+          
+          {/* Panel del asistente flotante */}
+          <CodestormAssistant 
+            isOpen={assistantOpen} 
+            onClose={() => setAssistantOpen(false)} 
+          />
         </div>
       </div>
     </EditorProvider>
