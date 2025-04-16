@@ -56,9 +56,9 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
   } = useAppContext();
   
   // Importación de bibliotecas para renderizar Markdown y resaltar código
-  const ReactMarkdown = require('react-markdown');
-  const SyntaxHighlighter = require('react-syntax-highlighter').Prism;
-  const oneDark = require('react-syntax-highlighter/dist/esm/styles/prism').oneDark;
+  import ReactMarkdown from 'react-markdown';
+  import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+  import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
   // Handlers
   const handleSendMessage = async () => {
@@ -246,7 +246,29 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
                     )}
                     
                     <div className="text-sm whitespace-pre-wrap">
-                      {msg.content}
+                      <ReactMarkdown
+                        components={{
+                          code({node, inline, className, children, ...props}) {
+                            const match = /language-(\w+)/.exec(className || '');
+                            return !inline && match ? (
+                              <SyntaxHighlighter
+                                style={oneDark}
+                                language={match[1]}
+                                PreTag="div"
+                                {...props}
+                              >
+                                {String(children).replace(/\n$/, '')}
+                              </SyntaxHighlighter>
+                            ) : (
+                              <code className={className} {...props}>
+                                {children}
+                              </code>
+                            );
+                          }
+                        }}
+                      >
+                        {msg.content}
+                      </ReactMarkdown>
                     </div>
                     
                     {msg.code && (
