@@ -12,6 +12,64 @@
     @apply font-sans antialiased bg-background text-foreground overflow-hidden;
     background-color: #0d1b3a; /* Azul oscuro como en las imágenes */
   }
+  
+  /* Futuristic UI Elements */
+  .futuristic-title {
+    @apply text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-amber-300 to-yellow-600;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+  }
+
+  .silver-border {
+    @apply border border-slate-400 rounded-md shadow-md;
+    box-shadow: 0 0 5px rgba(203, 213, 225, 0.5);
+  }
+
+  .gold-accent {
+    @apply text-amber-300;
+  }
+
+  .futuristic-container {
+    @apply bg-slate-900 bg-opacity-80 rounded-lg p-4;
+    backdrop-filter: blur(5px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(59, 130, 246, 0.3);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+  }
+
+  .futuristic-button {
+    @apply px-4 py-2 rounded-md bg-blue-900 text-white transition-all duration-300;
+    border: 1px solid rgba(148, 163, 184, 0.4);
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
+  }
+
+  .futuristic-button:hover {
+    @apply bg-blue-800;
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+    transform: translateY(-1px);
+  }
+
+  .model-selector {
+    @apply bg-slate-800 text-white p-2 rounded-md border border-slate-600;
+    transition: all 0.3s ease;
+  }
+
+  .model-selector:hover {
+    @apply border-amber-400;
+    box-shadow: 0 0 10px rgba(251, 191, 36, 0.3);
+  }
+
+  /* Animaciones */
+  @keyframes pulse-glow {
+    0%, 100% {
+      box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+    }
+    50% {
+      box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+    }
+  }
+
+  .pulse-animation {
+    animation: pulse-glow 2s infinite;
+  }
 
   /* Code editor specifics */
   .code-editor {
