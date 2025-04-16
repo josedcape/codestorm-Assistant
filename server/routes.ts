@@ -5,6 +5,7 @@ import { insertFileSchema } from "@shared/schema";
 import { z } from "zod";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
+import { handleAIGenerate, handleTerminalExecute } from "./ai";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Get all files
@@ -138,6 +139,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to execute code" });
     }
   });
+
+  // API endpoints para IA
+  app.post("/api/ai/generate", handleAIGenerate);
+  
+  // API endpoint para ejecución de comandos de terminal
+  app.post("/api/terminal/execute", handleTerminalExecute);
 
   const httpServer = createServer(app);
   return httpServer;

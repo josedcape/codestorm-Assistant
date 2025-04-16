@@ -1,3 +1,4 @@
+
 // AI Service types and implementation
 
 export type AIModel = 'gpt-4o' | 'gemini-2.5' | 'claude-3-7' | 'claude-3-5-sonnet-v2' | 'qwen-2.5-omni-7b';
@@ -24,7 +25,7 @@ export const MODEL_INFO: Record<AIModel, ModelInfo> = {
     id: 'gemini-2.5',
     name: 'Gemini 2.5 Pro',
     description: 'Modelo multimodal de Google con excelente comprensión de contexto',
-    apiKeyType: 'GOOGLE_API_KEY',
+    apiKeyType: 'GEMINI_API_KEY',
     releaseDate: '2024'
   },
   'claude-3-7': {
@@ -67,47 +68,63 @@ export interface Conversation {
   model: AIModel;
 }
 
-// Este servicio manejaría las llamadas a la API de IA
+// Implementación real con conexión a APIs
 export class AIService {
-  private apiKey: string | null = null;
   private model: AIModel = 'gpt-4o';
-
-  setApiKey(key: string) {
-    this.apiKey = key;
-  }
 
   setModel(model: AIModel) {
     this.model = model;
   }
 
   async generateResponse(prompt: string, code?: string): Promise<string> {
-    // Esta es una implementación simulada
-    // En una aplicación real, aquí se conectaría con la API de IA
-    if (!this.apiKey) {
-      throw new Error("API key not set. Please configure your API key.");
-    }
+    try {
+      // Obtener API key del backend para mantenerla segura
+      const response = await fetch('/api/ai/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: this.model,
+          prompt,
+          code,
+        }),
+      });
 
-    // Simular una respuesta
-    console.log(`Sending request to ${this.model} API with prompt: ${prompt.substring(0, 50)}...`);
-    
-    // Simular delay de red
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    return `Respuesta simulada del modelo ${this.model}. En una implementación real, esto vendría de la API.`;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al comunicarse con la API de IA');
+      }
+
+      const data = await response.json();
+      return data.response;
+    } catch (error) {
+      console.error('Error en generación de respuesta:', error);
+      throw error;
+    }
   }
 
   async executeCommand(command: string): Promise<string> {
-    // Simular la ejecución de un comando
-    console.log(`Executing command: ${command}`);
-    
-    // Simular delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    if (command.toLowerCase().includes('error')) {
-      throw new Error("Command execution failed");
+    try {
+      const response = await fetch('/api/terminal/execute', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ command }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al ejecutar el comando');
+      }
+
+      const data = await response.json();
+      return data.output;
+    } catch (error) {
+      console.error('Error ejecutando comando:', error);
+      throw error;
     }
-    
-    return `Executed: ${command}\nOutput: Comando ejecutado con éxito.`;
   }
 }
 
