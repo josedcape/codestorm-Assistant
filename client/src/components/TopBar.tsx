@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Moon, Sun, Menu } from 'lucide-react';
+import { Moon, Sun, Menu, Zap, Play, Settings, Share, FileCode, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useEditor } from '@/hooks/useEditor';
 import {
@@ -9,6 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { CodestormAssistantButton } from './CodestormAssistant';
 
 interface TopBarProps {
   toggleSidebar: () => void;
@@ -17,6 +18,7 @@ interface TopBarProps {
 const TopBar: React.FC<TopBarProps> = ({ toggleSidebar }) => {
   const { settings, updateSettings, createNewFile, saveCurrentFile, openFile } = useEditor();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showAssistant, setShowAssistant] = useState(false);
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
@@ -29,15 +31,23 @@ const TopBar: React.FC<TopBarProps> = ({ toggleSidebar }) => {
     });
   };
 
+  const toggleAssistant = () => {
+    setShowAssistant(!showAssistant);
+  };
+
   return (
     <>
-      <div className="bg-sidebar px-4 py-2 flex items-center justify-between border-b border-border">
+      <div className="bg-card px-4 py-2 flex items-center justify-between border-b border-border">
         <div className="flex items-center space-x-4">
+          <button 
+            onClick={toggleSidebar}
+            className="p-1 rounded hover:bg-blue-800/30"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
           <div className="flex items-center">
-            <svg className="w-6 h-6 text-primary" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872l-.1-.34zM10 12.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/>
-            </svg>
-            <span className="ml-2 font-semibold">CodeEdit</span>
+            <Zap className="w-5 h-5 text-primary" />
+            <span className="ml-2 codestorm-logo">CODESTORM</span>
           </div>
           
           <div className="hidden md:flex space-x-4">
@@ -49,26 +59,26 @@ const TopBar: React.FC<TopBarProps> = ({ toggleSidebar }) => {
           </div>
         </div>
         
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-3">
+          <Button variant="ghost" size="sm" className="flex items-center text-sm gap-1.5" onClick={saveCurrentFile}>
+            <Save size={16} />
+            <span className="sr-only md:not-sr-only">Guardar</span>
+          </Button>
+          
+          <Button variant="ghost" size="sm" className="flex items-center text-sm gap-1.5">
+            <Share size={16} />
+            <span className="sr-only md:not-sr-only">Compartir</span>
+          </Button>
+
+          <CodestormAssistantButton onClick={toggleAssistant} />
+          
           <Button
             variant="ghost"
             size="icon"
             onClick={toggleTheme}
-            className="p-1 rounded hover:bg-muted"
+            className="p-1 rounded-full hover:bg-blue-800/30"
           >
-            {settings.theme === 'dark' ? (
-              <Moon className="w-5 h-5" />
-            ) : (
-              <Sun className="w-5 h-5" />
-            )}
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleMobileMenu}
-            className="p-1 rounded hover:bg-muted md:hidden"
-          >
-            <Menu className="w-5 h-5" />
+            <Settings className="w-5 h-5" />
           </Button>
         </div>
       </div>
@@ -77,11 +87,11 @@ const TopBar: React.FC<TopBarProps> = ({ toggleSidebar }) => {
       {mobileMenuOpen && (
         <div className="bg-sidebar border-b border-border md:hidden">
           <div className="flex flex-col p-2">
-            <Button variant="ghost" className="justify-start hover:bg-muted px-3 py-2 rounded text-sm text-left">File</Button>
-            <Button variant="ghost" className="justify-start hover:bg-muted px-3 py-2 rounded text-sm text-left">Edit</Button>
-            <Button variant="ghost" className="justify-start hover:bg-muted px-3 py-2 rounded text-sm text-left">View</Button>
-            <Button variant="ghost" className="justify-start hover:bg-muted px-3 py-2 rounded text-sm text-left">Run</Button>
-            <Button variant="ghost" className="justify-start hover:bg-muted px-3 py-2 rounded text-sm text-left">Help</Button>
+            <Button variant="ghost" className="justify-start hover:bg-blue-800/30 px-3 py-2 rounded text-sm text-left">Archivo</Button>
+            <Button variant="ghost" className="justify-start hover:bg-blue-800/30 px-3 py-2 rounded text-sm text-left">Editar</Button>
+            <Button variant="ghost" className="justify-start hover:bg-blue-800/30 px-3 py-2 rounded text-sm text-left">Ver</Button>
+            <Button variant="ghost" className="justify-start hover:bg-blue-800/30 px-3 py-2 rounded text-sm text-left">Ejecutar</Button>
+            <Button variant="ghost" className="justify-start hover:bg-blue-800/30 px-3 py-2 rounded text-sm text-left">Ayuda</Button>
           </div>
         </div>
       )}

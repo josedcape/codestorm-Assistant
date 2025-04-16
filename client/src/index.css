@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -9,11 +10,13 @@
 
   body {
     @apply font-sans antialiased bg-background text-foreground overflow-hidden;
+    background-color: #0d1b3a; /* Azul oscuro como en las imágenes */
   }
 
   /* Code editor specifics */
   .code-editor {
     @apply h-[calc(100vh-126px)];
+    font-family: 'Fira Code', monospace;
   }
 
   /* Monaco editor overrides */
@@ -21,15 +24,116 @@
     @apply bg-background;
   }
 
+  /* CODESTORM branding and style */
+  .codestorm-logo {
+    @apply font-bold text-2xl text-primary;
+    text-shadow: 0 0 10px rgba(255, 204, 0, 0.3);
+    letter-spacing: 1px;
+  }
+
+  .codestorm-assistant-panel {
+    @apply fixed right-0 top-14 w-80 bg-card rounded-l-lg shadow-xl border-l border-t border-b border-blue-500 z-50;
+    height: calc(100vh - 56px);
+    transition: transform 0.3s ease;
+  }
+
+  .codestorm-assistant-collapsed {
+    transform: translateX(100%);
+  }
+
+  .codestorm-tab {
+    @apply px-4 py-2 text-sm font-medium border-b-2 border-transparent cursor-pointer transition-colors;
+  }
+
+  .codestorm-tab.active {
+    @apply border-primary text-primary;
+  }
+
+  .codestorm-button {
+    @apply flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors;
+    background-color: #3b82f6;
+    color: white;
+  }
+
+  .codestorm-button:hover {
+    @apply shadow-md;
+    background-color: #2563eb;
+    transform: translateY(-1px);
+  }
+
+  .codestorm-chat-container {
+    @apply flex flex-col h-full p-4 overflow-hidden;
+  }
+
+  .codestorm-messages {
+    @apply flex-1 overflow-y-auto mb-4 space-y-3;
+  }
+
+  .codestorm-message {
+    @apply p-3 rounded-lg max-w-[90%];
+  }
+
+  .codestorm-message-assistant {
+    @apply bg-blue-900 text-white self-start rounded-tl-none;
+  }
+
+  .codestorm-message-user {
+    @apply bg-blue-600 text-white self-end rounded-tr-none;
+  }
+
+  .codestorm-input {
+    @apply flex items-center gap-2 p-2 bg-card rounded-md border border-blue-500;
+  }
+
+  .codestorm-input input {
+    @apply flex-1 bg-transparent border-none focus:outline-none text-foreground placeholder:text-muted-foreground;
+  }
+
+  /* Editor Tabs Styling */
+  .editor-tabs {
+    @apply flex bg-card px-1 py-0.5 overflow-x-auto;
+    border-bottom: 1px solid #334155;
+    height: 2.5rem;
+  }
+
+  .editor-tab {
+    @apply flex items-center px-3 py-1 text-sm cursor-pointer;
+    max-width: 200px;
+    user-select: none;
+  }
+
+  .editor-tab.active {
+    @apply bg-background text-primary;
+    border-bottom: 2px solid #ffcc00;
+  }
+
+  .editor-tab-close {
+    @apply ml-2 opacity-60 hover:opacity-100;
+  }
+
+  /* Status Bar Styling */
+  .status-bar {
+    @apply flex items-center justify-between px-4 py-1 bg-card border-t border-border text-xs;
+    height: 1.75rem;
+  }
+
+  .status-bar-item {
+    @apply flex items-center gap-1.5;
+  }
+
   @media (max-width: 768px) {
     .sidebar-open .editor-container {
       @apply hidden;
+    }
+
+    .codestorm-assistant-panel {
+      @apply w-full;
     }
   }
 
   /* Custom scrollbar */
   ::-webkit-scrollbar {
-    @apply w-2.5 h-2.5;
+    @apply w-2 h-2;
   }
   
   ::-webkit-scrollbar-track {

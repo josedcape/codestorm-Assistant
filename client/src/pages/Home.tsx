@@ -3,12 +3,18 @@ import TopBar from '@/components/TopBar';
 import Sidebar from '@/components/Sidebar';
 import EditorContainer from '@/components/EditorContainer';
 import { EditorProvider } from '@/hooks/useEditor';
+import CodestormAssistant from '@/components/CodestormAssistant';
 
 const Home: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [assistantOpen, setAssistantOpen] = useState(false);
   
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
+  };
+  
+  const toggleAssistant = () => {
+    setAssistantOpen(!assistantOpen);
   };
   
   // Handle responsive behavior
@@ -16,6 +22,8 @@ const Home: React.FC = () => {
     const handleResize = () => {
       if (window.innerWidth >= 768) {
         setSidebarOpen(true);
+      } else {
+        setSidebarOpen(false);
       }
     };
     
@@ -29,7 +37,7 @@ const Home: React.FC = () => {
   
   return (
     <EditorProvider>
-      <div className="h-screen flex flex-col">
+      <div className="h-screen flex flex-col bg-background">
         <TopBar toggleSidebar={toggleSidebar} />
         
         <div 
@@ -38,6 +46,7 @@ const Home: React.FC = () => {
         >
           <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
           <EditorContainer />
+          <CodestormAssistant />
         </div>
       </div>
     </EditorProvider>
