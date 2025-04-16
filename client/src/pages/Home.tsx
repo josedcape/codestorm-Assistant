@@ -70,13 +70,13 @@ const Home: React.FC = () => {
 
   return (
     <EditorProvider>
-      <div className="h-screen flex flex-col bg-slate-950 text-white overflow-hidden min-h-screen overflow-y-auto">
+      <div className="h-screen flex flex-col bg-slate-950 text-white min-h-screen scroll-container">
         <Header 
           toggleFileExplorer={toggleSidebar} 
           toggleAIAssistant={toggleAssistant}
         />
 
-        <div className="flex flex-1 overflow-auto"> {/* Added overflow-auto */}
+        <div className="flex flex-1 scroll-container"> {/* Aplicamos scroll-container */}
           {/* Explorador de archivos */}
           {sidebarOpen && !isMobile && (
             <motion.div
@@ -90,7 +90,7 @@ const Home: React.FC = () => {
           )}
 
           {/* Editor de código (centro) */}
-          <div className="flex-grow overflow-auto"> {/* Added overflow-auto */}
+          <div className="flex-grow scroll-container">
             <EditorContainer />
           </div>
 

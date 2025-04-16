@@ -55,10 +55,10 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
     currentConversation
   } = useAppContext();
   
-  // Importación de biblioteca para renderizar Markdown (asegúrate de tenerla instalada)
+  // Importación de bibliotecas para renderizar Markdown y resaltar código
   const ReactMarkdown = require('react-markdown');
-  const { Prism as SyntaxHighlighter } = require('react-syntax-highlighter');
-  const { oneDark } = require('react-syntax-highlighter/dist/esm/styles/prism');
+  const SyntaxHighlighter = require('react-syntax-highlighter').Prism;
+  const oneDark = require('react-syntax-highlighter/dist/esm/styles/prism').oneDark;
 
   // Handlers
   const handleSendMessage = async () => {
@@ -78,17 +78,42 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
       
       setMessage('');
       
-      // Simular respuesta del asistente después de 1 segundo
-      setTimeout(() => {
+      // Enviar petición a la API según el modelo seleccionado
+      const response = await fetch('/api/ai/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: userContent,
+          model: selectedModel,
+          code: editorTab?.content,
+          agent: currentAgent
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        // Agregar respuesta del asistente
         addMessage(
-          `Esta es una respuesta simulada del asistente de IA. En una implementación real, esto sería generado por ${MODEL_INFO[selectedModel].name}.`,
+          data.response, 
           'assistant'
         );
-        setIsProcessing(false);
-      }, 1000);
-      
+      } else {
+        // Agregar mensaje de error
+        addMessage(
+          `⚠️ **Error**: ${data.error || 'Hubo un problema al conectar con el asistente de IA.'}`,
+          'assistant'
+        );
+      }
     } catch (error) {
       console.error('Error al procesar mensaje:', error);
+      addMessage(
+        '⚠️ **Error de conexión**: No se pudo conectar con el servicio. Por favor, intenta nuevamente más tarde.',
+        'assistant'
+      );
+    } finally {
       setIsProcessing(false);
     }
   };
