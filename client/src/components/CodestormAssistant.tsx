@@ -16,6 +16,8 @@ import {
   CheckCircle,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
+  Settings,
   Trash2,
   Save,
   Maximize2,
