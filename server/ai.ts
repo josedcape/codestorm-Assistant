@@ -1,4 +1,3 @@
-
 import { Request, Response } from 'express';
 import axios from 'axios';
 
@@ -24,7 +23,7 @@ async function generateOpenAIResponse(prompt: string, code?: string) {
 
   try {
     console.log('Enviando solicitud a OpenAI...');
-    
+
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
@@ -165,7 +164,7 @@ export async function handleAIGenerate(req: Request, res: Response) {
     }
 
     console.log(`Generando respuesta con modelo ${model}. Prompt: ${prompt.substring(0, 50)}...`);
-    
+
     let response: string;
 
     try {
@@ -212,7 +211,7 @@ export async function handleAIGenerate(req: Request, res: Response) {
       res.json({ response });
     } catch (modelError: any) {
       console.error(`Error específico del modelo ${model}:`, modelError);
-      
+
       // Intentar con otro modelo si el principal falla
       if (model !== 'gpt-4o' && process.env.OPENAI_API_KEY) {
         console.log('Intentando con GPT-4o como fallback...');
@@ -226,21 +225,21 @@ export async function handleAIGenerate(req: Request, res: Response) {
           console.error('El fallback a GPT-4o también falló:', fallbackError);
         }
       }
-      
+
       // Si llegamos aquí, tanto el modelo original como el fallback fallaron
       throw modelError;
     }
   } catch (error: any) {
     console.error('Error al generar respuesta de IA:', error);
-    let errorMessage = 'Error interno del servidor';
-    
+    let errorMessage = '⚠️ Error interno del servidor';
+
     if (error.response && error.response.data) {
       console.error('Detalles de la respuesta de error:', error.response.data);
-      errorMessage = `Error: ${error.message}. Detalles: ${JSON.stringify(error.response.data)}`;
+      errorMessage = `⚠️ **Error**: ${error.message}\n\n**Detalles**: ${JSON.stringify(error.response.data)}`;
     } else if (error.message) {
-      errorMessage = error.message;
+      errorMessage = `⚠️ **Error**: ${error.message}`;
     }
-    
+
     res.status(500).json({ error: errorMessage });
   }
 }
@@ -257,16 +256,16 @@ export async function handleTerminalExecute(req: Request, res: Response) {
     // Implementación básica - en un entorno real deberías usar
     // medidas de seguridad adicionales antes de ejecutar comandos
     const { exec } = require('child_process');
-    
+
     exec(command, (error: any, stdout: string, stderr: string) => {
       if (error) {
         return res.status(500).json({ error: error.message });
       }
-      
+
       if (stderr) {
         return res.json({ output: stderr });
       }
-      
+
       res.json({ output: stdout });
     });
   } catch (error: any) {

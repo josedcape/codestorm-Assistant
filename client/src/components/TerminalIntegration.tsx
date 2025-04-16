@@ -30,72 +30,140 @@ const TerminalIntegration: React.FC<TerminalIntegrationProps> = ({ onExecuteComm
     inputRef.current?.focus();
   }, []);
 
+  // Función para detectar si es una instrucción en lenguaje natural
+  const isNaturalLanguageCommand = (cmd: string): boolean => {
+    const naturalLanguagePatterns = [
+      /instala|instalar|agregar|añadir|agrega/i,
+      /crear|crea|genera|generar|nuevo|nueva/i,
+      /ejecuta|ejecutar|corre|correr|inicia|iniciar/i,
+      /elimina|eliminar|borra|borrar|quita|quitar/i,
+      /busca|buscar|encuentra|encontrar/i,
+      /muestra|mostrar|listar|lista/i,
+      /cambia|cambiar|modifica|modificar/i,
+      /configura|configurar|establece|establecer/i
+    ];
+    
+    return naturalLanguagePatterns.some(pattern => pattern.test(cmd));
+  };
+  
+  // Función para convertir lenguaje natural a comando
+  const convertToTerminalCommand = async (naturalCommand: string): Promise<string> => {
+    try {
+      const { currentAgent } = useAppContext();
+      
+      // Usamos el servicio de IA para convertir la instrucción
+      const aiService = new AIService();
+      const prompt = `Convierte esta instrucción en lenguaje natural a un comando de terminal Linux válido, 
+                     devuelve SOLO el comando sin explicaciones adicionales: "${naturalCommand}"`;
+      
+      const response = await aiService.generateResponse(prompt, undefined, currentAgent);
+      
+      // Limpiamos la respuesta para obtener solo el comando
+      const cleanedResponse = response
+        .replace(/```bash|```sh|```/g, '')  // Eliminar bloques de código markdown
+        .replace(/^\s*\$\s*/, '')           // Eliminar símbolo $ al inicio
+        .trim();
+      
+      return cleanedResponse;
+    } catch (error) {
+      console.error('Error al convertir lenguaje natural a comando:', error);
+      throw new Error('No se pudo convertir la instrucción a un comando válido');
+    }
+  };
+
   const handleExecute = async () => {
     if (!command.trim() || isExecuting) return;
     
     try {
       setIsExecuting(true);
       
-      // Add command to history
-      setHistory(prev => [...prev, { type: 'command', content: command }]);
+      let commandToExecute = command;
+      let originalCommand = command;
       
-      // Add to app context terminal
+      // Detectar si es lenguaje natural y convertir a comando
+      if (isNaturalLanguageCommand(command)) {
+        addTerminalLine({
+          text: `Interpretando: "${command}"`,
+          type: 'output'
+        });
+        
+        try {
+          commandToExecute = await convertToTerminalCommand(command);
+          addTerminalLine({
+            text: `Comando interpretado: ${commandToExecute}`,
+            type: 'success'
+          });
+        } catch (conversionError) {
+          console.error('Error en conversión:', conversionError);
+          addTerminalLine({
+            text: 'No se pudo interpretar la instrucción como un comando válido.',
+            type: 'error'
+          });
+          setIsExecuting(false);
+          return;
+        }
+      }
+      
+      // Añadir comando original al historial
+      setHistory(prev => [...prev, { type: 'command', content: originalCommand }]);
+      
+      // Añadir comando ejecutado al contexto de terminal
       addTerminalLine({
-        text: command,
+        text: commandToExecute,
         type: 'command'
       });
       
       if (onExecuteCommand) {
-        // Execute command through the AI service
-        const response = await onExecuteCommand(command);
+        // Ejecutar el comando a través del servicio de IA
+        const response = await onExecuteCommand(commandToExecute);
         
-        // Parse and handle the response
+        // Analizar y manejar la respuesta
         let formattedResponse = response;
         try {
           const parsedResponse = JSON.parse(response);
           formattedResponse = parsedResponse.output || response;
         } catch (e) {
-          // If not JSON, use raw response
+          // Si no es JSON, usar respuesta sin procesar
         }
         
-        // Add response to history
+        // Añadir respuesta al historial
         setHistory(prev => [...prev, { 
           type: 'response', 
           content: formattedResponse
         }]);
         
-        // Add to app context terminal
+        // Añadir al contexto de terminal
         addTerminalLine({
           text: formattedResponse,
           type: 'output'
         });
       } else {
-        // No execute function provided
+        // No hay función de ejecución proporcionada
         setHistory(prev => [...prev, { 
           type: 'response', 
-          content: 'Command execution not available in this context'
+          content: 'La ejecución de comandos no está disponible en este contexto'
         }]);
         
-        // Add to app context terminal
+        // Añadir al contexto de terminal
         addTerminalLine({
-          text: 'Command execution not available in this context',
+          text: 'La ejecución de comandos no está disponible en este contexto',
           type: 'error'
         });
       }
       
-      // Clear command
+      // Limpiar comando
       setCommand('');
     } catch (error) {
-      console.error('Error executing command:', error);
+      console.error('Error ejecutando comando:', error);
       
-      const errorMessage = `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`;
+      const errorMessage = `Error: ${error instanceof Error ? error.message : 'Ocurrió un error desconocido'}`;
       
       setHistory(prev => [...prev, { 
         type: 'response', 
         content: errorMessage
       }]);
       
-      // Add to app context terminal
+      // Añadir al contexto de terminal
       addTerminalLine({
         text: errorMessage,
         type: 'error'

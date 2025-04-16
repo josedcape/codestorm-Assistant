@@ -76,11 +76,33 @@ export class AIService {
     this.model = model;
   }
 
-  async generateResponse(prompt: string, code?: string): Promise<string> {
+  async generateResponse(prompt: string, code?: string, agentType: AgentType = 'dev'): Promise<string> {
     try {
-      console.log(`AIService: Enviando prompt al servidor usando modelo ${this.model}`);
+      console.log(`AIService: Enviando prompt al servidor usando modelo ${this.model} con agente ${agentType}`);
       
-      // Obtener API key del backend para mantenerla segura
+      // Construir instrucciones según el tipo de agente
+      let systemPrompt = "Eres un asistente de programación experto. ";
+      
+      switch(agentType) {
+        case 'dev':
+          systemPrompt += "Especialízate en escribir código limpio y solucionar errores. " +
+                         "Genera código sin comentarios y con sintaxis clara. ";
+          break;
+        case 'arch':
+          systemPrompt += "Especialízate en diseñar sistemas y estructuras de código óptimas. " +
+                         "Enfócate en patrones de diseño y arquitectura de software. ";
+          break;
+        case 'adv':
+          systemPrompt += "Tienes capacidades completas para tareas complejas de desarrollo. " +
+                         "Puedes implementar soluciones avanzadas y optimizadas. ";
+          break;
+      }
+      
+      // Añadir instrucciones para formato y estilo
+      systemPrompt += "Responde en español usando formato Markdown. Utiliza emojis para resaltar puntos importantes. " +
+                     "Cuando generes código, hazlo sin comentarios, limpio y con resaltado de sintaxis en bloques de código. " +
+                     "Cuando sea apropiado, convierte instrucciones en lenguaje natural a comandos de terminal que puedan ejecutarse.";
+      
       const response = await fetch('/api/ai/generate', {
         method: 'POST',
         headers: {
@@ -90,6 +112,8 @@ export class AIService {
           model: this.model,
           prompt,
           code,
+          agentType,
+          systemPrompt
         }),
       });
 
@@ -112,8 +136,7 @@ export class AIService {
       return data.response;
     } catch (error: any) {
       console.error('Error en generación de respuesta:', error);
-      // Devolver un mensaje de error más amigable para el usuario
-      return `Lo siento, ha ocurrido un error al procesar tu solicitud: ${error.message || 'Error desconocido'}. Por favor, verifica que las claves API estén configuradas correctamente e intenta de nuevo.`;
+      return `⚠️ **Error en la solicitud**\n\nLo siento, ha ocurrido un problema: ${error.message || 'Error desconocido'}. \n\nPor favor, verifica que las claves API estén configuradas correctamente e intenta de nuevo.`;
     }
   }
 

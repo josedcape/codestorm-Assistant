@@ -54,6 +54,11 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
     activeTab: editorTab,
     currentConversation
   } = useAppContext();
+  
+  // Importación de biblioteca para renderizar Markdown (asegúrate de tenerla instalada)
+  const ReactMarkdown = require('react-markdown');
+  const { Prism as SyntaxHighlighter } = require('react-syntax-highlighter');
+  const { oneDark } = require('react-syntax-highlighter/dist/esm/styles/prism');
 
   // Handlers
   const handleSendMessage = async () => {
