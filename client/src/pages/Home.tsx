@@ -76,7 +76,7 @@ const Home: React.FC = () => {
           toggleAIAssistant={toggleAssistant}
         />
 
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-1 overflow-auto"> {/* Added overflow-auto */}
           {/* Explorador de archivos */}
           {sidebarOpen && !isMobile && (
             <motion.div
@@ -90,7 +90,7 @@ const Home: React.FC = () => {
           )}
 
           {/* Editor de código (centro) */}
-          <div className="flex-grow overflow-hidden">
+          <div className="flex-grow overflow-auto"> {/* Added overflow-auto */}
             <EditorContainer />
           </div>
 

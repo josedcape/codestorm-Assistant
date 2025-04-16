@@ -21,7 +21,7 @@ function App() {
   // Set theme on component mount
   useEffect(() => {
     document.documentElement.classList.add("dark");
-    
+
     // Create grid pattern background
     const body = document.body;
     body.style.backgroundColor = "#0A1929";

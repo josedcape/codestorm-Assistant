@@ -78,6 +78,8 @@ export class AIService {
 
   async generateResponse(prompt: string, code?: string): Promise<string> {
     try {
+      console.log(`AIService: Enviando prompt al servidor usando modelo ${this.model}`);
+      
       // Obtener API key del backend para mantenerla segura
       const response = await fetch('/api/ai/generate', {
         method: 'POST',
@@ -91,16 +93,27 @@ export class AIService {
         }),
       });
 
+      const data = await response.json();
+      
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al comunicarse con la API de IA');
+        console.error('Error del servidor:', data);
+        throw new Error(data.error || 'Error al comunicarse con la API de IA');
       }
 
-      const data = await response.json();
+      if (data.warning) {
+        console.warn('Advertencia del servidor:', data.warning);
+      }
+      
+      if (!data.response) {
+        throw new Error('La respuesta del servidor no contiene el campo "response"');
+      }
+      
+      console.log('AIService: Respuesta recibida correctamente');
       return data.response;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error en generación de respuesta:', error);
-      throw error;
+      // Devolver un mensaje de error más amigable para el usuario
+      return `Lo siento, ha ocurrido un error al procesar tu solicitud: ${error.message || 'Error desconocido'}. Por favor, verifica que las claves API estén configuradas correctamente e intenta de nuevo.`;
     }
   }
 

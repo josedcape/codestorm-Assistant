@@ -3,6 +3,48 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --background: 226 32% 10%;
+  --foreground: 220 10% 98%;
+  --card: 224 32% 12%;
+  --card-foreground: 220 10% 98%;
+  --popover: 224 38% 8%;
+  --popover-foreground: 220 10% 98%;
+  --primary: 220 80% 56%;
+  --primary-foreground: 240 10% 3.9%;
+  --secondary: 219 32% 19%;
+  --secondary-foreground: 220 10% 98%;
+  --muted: 220 18% 20%;
+  --muted-foreground: 218 10% 71%;
+  --accent: 219 32% 19%;
+  --accent-foreground: 220 10% 98%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 220 18% 18%;
+  --input: 220 18% 18%;
+  --ring: 220 80% 56%;
+  --radius: 0.5rem;
+}
+
+/* Estilos globales para permitir scroll */
+html, body {
+  height: 100%;
+  margin: 0;
+  overflow-y: auto;
+}
+
+/* Asegurar que todos los contenedores permitan scroll cuando sea necesario */
+.overflow-auto {
+  overflow: auto !important;
+}
+
+/* Estilos específicos para áreas de scroll */
+.scroll-container {
+  max-height: 100vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 @layer base {
   * {
     @apply border-border;
@@ -13,7 +55,7 @@
     background-color: #0d1b3a; /* Azul oscuro como en las imágenes */
     min-height: 100vh;
   }
-  
+
   /* Futuristic UI Elements */
   .futuristic-title {
     @apply text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-amber-300 to-yellow-600;
@@ -194,24 +236,24 @@
   ::-webkit-scrollbar {
     @apply w-2 h-2;
   }
-  
+
   ::-webkit-scrollbar-track {
     @apply bg-background;
   }
-  
+
   ::-webkit-scrollbar-thumb {
     @apply bg-muted rounded-sm;
   }
-  
+
   ::-webkit-scrollbar-thumb:hover {
     @apply bg-muted-foreground;
   }
-  
+
   /* Ensure main content areas are scrollable */
   .main-content-area {
     @apply overflow-y-auto max-h-screen pb-16;
   }
-  
+
   /* Make sure containers don't cut off content */
   .overflow-container {
     @apply overflow-y-auto;
