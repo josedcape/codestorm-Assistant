@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground overflow-hidden;
+  }
+
+  /* Code editor specifics */
+  .code-editor {
+    @apply h-[calc(100vh-126px)];
+  }
+
+  /* Monaco editor overrides */
+  .monaco-editor .margin {
+    @apply bg-background;
+  }
+
+  @media (max-width: 768px) {
+    .sidebar-open .editor-container {
+      @apply hidden;
+    }
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    @apply w-2.5 h-2.5;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-background;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted rounded-sm;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground;
+  }
+}
