@@ -2,9 +2,18 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import * as dotenv from "dotenv";
+import path from "path";
 
 // Load environment variables from .env file
-dotenv.config();
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+
+// Verify required API keys
+const requiredKeys = ['OPENAI_API_KEY', 'GEMINI_API_KEY', 'ANTHROPIC_API_KEY'];
+for (const key of requiredKeys) {
+  if (!process.env[key]) {
+    console.warn(`⚠️ Warning: ${key} is not set in .env file`);
+  }
+}
 
 const app = express();
 app.use(express.json());
