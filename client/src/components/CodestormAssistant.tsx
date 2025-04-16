@@ -76,7 +76,6 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
   const [expanded, setExpanded] = useState(false);
   const [showVoiceInput, setShowVoiceInput] = useState(false);
   const [showFileUpload, setShowFileUpload] = useState(false);
-  const [expanded, setExpanded] = useState(false);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [showConversations, setShowConversations] = useState(false);
   const [conversations, setConversations] = useState<Conversation[]>([]);
