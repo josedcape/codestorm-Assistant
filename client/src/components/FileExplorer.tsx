@@ -8,9 +8,10 @@ import { FileInfo } from '@/context/AppContext';
 
 interface FileExplorerProps {
   isOpen?: boolean;
+  setShowFileExplorer?: (value: boolean) => void; // Added prop for mobile close functionality
 }
 
-const FileExplorer: React.FC<FileExplorerProps> = ({ isOpen = true }) => {
+const FileExplorer: React.FC<FileExplorerProps> = ({ isOpen = true, setShowFileExplorer }) => {
   const { currentProject, openFile, refreshFiles, updateFile, deleteFile, createFile } = useAppContext();
   const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -25,7 +26,6 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ isOpen = true }) => {
   const [fileToUpload, setFileToUpload] = useState<File | null>(null);
 
   useEffect(() => {
-    // Cargar archivos al montar el componente
     loadFiles();
   }, []);
 
@@ -360,7 +360,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ isOpen = true }) => {
         width: isOpen ? 280 : 0,
         opacity: isOpen ? 1 : 0
       }}
-      className={`border-r border-slate-800 bg-slate-900 h-full overflow-hidden ${isOpen ? 'block' : 'hidden'}`}
+      className={`border-r border-slate-800 bg-slate-900 h-full overflow-hidden ${isOpen ? 'block' : 'hidden'} `}
     >
       <div className="p-4 border-b border-slate-800 flex justify-between items-center">
         <h2 className="font-semibold text-sm">Explorador de Archivos</h2>

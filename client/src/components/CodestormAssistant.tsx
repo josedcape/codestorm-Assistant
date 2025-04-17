@@ -350,15 +350,18 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
     conv.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const isMobile = useMediaQuery('(max-width: 768px)');
+
   return (
     <motion.div
-      initial={{ opacity: 0, x: 300 }}
+      initial={{ opacity: 0, x: isMobile ? 0 : 300 }}
       animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 300 }}
+      exit={{ opacity: 0, x: isMobile ? 0 : 300 }}
       transition={{ duration: 0.3 }}
       className={`flex flex-col bg-slate-900 border-l border-slate-800 h-full transition-all duration-300 ${
-        expanded ? 'expanded-chat' : 'w-full max-w-[400px]'
+        expanded ? 'expanded-chat' : isMobile ? 'w-full' : 'max-w-[400px]'
       }`}
+      style={{ width: isMobile ? '100%' : 'auto' }}
     >
       {/* Cabecera */}
       <div className="flex items-center justify-between p-4 border-b border-slate-800">
@@ -407,9 +410,10 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
           {showConversations && (
             <motion.div
               initial={{ opacity: 0, width: 0 }}
-              animate={{ opacity: 1, width: 250 }}
+              animate={{ opacity: 1, width: isMobile ? '100%' : 250 }}
               exit={{ opacity: 0, width: 0 }}
               className="border-r border-slate-800 overflow-hidden flex flex-col"
+              style={{ width: isMobile ? '100%' : 'auto' }}
             >
               <div className="p-3 border-b border-slate-800">
                 <h3 className="font-medium mb-2">Conversaciones</h3>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { RobotLogo } from './RobotLogo';
 import { useAppContext } from '@/context/AppContext';
@@ -7,15 +7,16 @@ import {
   Bot, 
   EyeIcon, 
   Settings, 
-  MenuIcon,
+  Menu as MenuIcon,
   Code,
   Terminal,
-  Braces,
   ExternalLink,
-  PackageIcon
+  PackageIcon,
+  X
 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 interface HeaderProps {
   toggleFileExplorer?: () => void;
@@ -55,6 +56,9 @@ const Header: React.FC<HeaderProps> = ({
     } else if (setShowFileExplorer) {
       setShowFileExplorer(!showFileExplorer);
     }
+    if (isMobile) {
+      setMobileMenuOpen(false);
+    }
   };
 
   const handleToggleAIAssistant = () => {
@@ -63,19 +67,22 @@ const Header: React.FC<HeaderProps> = ({
     } else if (setShowAIAssistant) {
       setShowAIAssistant(!showAIAssistant);
     }
+    if (isMobile) {
+      setMobileMenuOpen(false);
+    }
   };
 
+  // Cierra el menú móvil cuando cambia el tamaño de la pantalla a desktop
+  useEffect(() => {
+    if (!isMobile && mobileMenuOpen) {
+      setMobileMenuOpen(false);
+    }
+  }, [isMobile]);
+
   return (
-    <header className="w-full bg-slate-800 border-b border-slate-700 py-2 px-4">
+    <header className="w-full bg-slate-800 border-b border-slate-700 py-2 px-4 sticky top-0 z-50">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          {isMobile && (
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(prev => !prev)}>
-                <MenuIcon size={18} />
-              </Button>
-            </motion.div>
-          )}
           <motion.div 
             className="flex items-center"
             initial={{ x: -20, opacity: 0 }}
@@ -94,7 +101,7 @@ const Header: React.FC<HeaderProps> = ({
           </motion.div>
         </div>
 
-        {/* Botones de navegación */}
+        {/* Botones de navegación para desktop */}
         {!isMobile && (
           <div className="flex items-center space-x-1">
             <Button
@@ -104,7 +111,7 @@ const Header: React.FC<HeaderProps> = ({
               className="gap-1"
             >
               <FolderOpen size={16} />
-              {!isMobile && <span>Explorer</span>}
+              <span>Explorer</span>
             </Button>
 
             <Button
@@ -114,7 +121,7 @@ const Header: React.FC<HeaderProps> = ({
               className="gap-1"
             >
               <Bot size={16} />
-              {!isMobile && <span>Asistente</span>}
+              <span>Asistente</span>
             </Button>
 
             {togglePreview && (
@@ -125,7 +132,7 @@ const Header: React.FC<HeaderProps> = ({
                 className="gap-1"
               >
                 <EyeIcon size={16} />
-                {!isMobile && <span>Vista Previa</span>}
+                <span>Vista Previa</span>
               </Button>
             )}
 
@@ -137,9 +144,10 @@ const Header: React.FC<HeaderProps> = ({
                 className="gap-1"
               >
                 <Settings size={16} />
-                {!isMobile && <span>Configuración</span>}
+                <span>Configuración</span>
               </Button>
             )}
+            
             {toggleWebView && (
               <Button
                 variant="outline"
@@ -148,9 +156,10 @@ const Header: React.FC<HeaderProps> = ({
                 className="gap-1"
               >
                 <ExternalLink size={16} />
-                {!isMobile && <span>WebView</span>}
+                <span>WebView</span>
               </Button>
             )}
+            
             {toggleTerminal && (
               <Button
                 variant="outline"
@@ -159,9 +168,10 @@ const Header: React.FC<HeaderProps> = ({
                 className="gap-1"
               >
                 <Terminal size={16} />
-                {!isMobile && <span>Terminal</span>}
+                <span>Terminal</span>
               </Button>
             )}
+            
             <Button 
               variant="ghost" 
               title="Planificador de Proyectos" 
@@ -172,11 +182,111 @@ const Header: React.FC<HeaderProps> = ({
           </div>
         )}
 
-        {/* Botón de menú móvil */}
+        {/* Menú móvil */}
         {isMobile && (
-          <Button variant="ghost" size="icon" className="md:hidden">
-            <MenuIcon size={20} />
-          </Button>
+          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="md:hidden">
+                <MenuIcon size={20} />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[250px] p-0">
+              <div className="flex flex-col h-full bg-slate-800">
+                <div className="p-4 border-b border-slate-700 flex items-center justify-between">
+                  <span className="font-semibold text-gold-400">Menú</span>
+                  <Button variant="ghost" size="icon" onClick={toggleMobileMenu}>
+                    <X size={18} />
+                  </Button>
+                </div>
+                <div className="p-3 flex flex-col space-y-2">
+                  <Button
+                    variant={showFileExplorer ? "default" : "outline"}
+                    className="w-full justify-start"
+                    onClick={handleToggleFileExplorer}
+                  >
+                    <FolderOpen size={16} className="mr-2" />
+                    Explorer
+                  </Button>
+                  <Button
+                    variant={showAIAssistant ? "default" : "outline"}
+                    className="w-full justify-start"
+                    onClick={handleToggleAIAssistant}
+                  >
+                    <Bot size={16} className="mr-2" />
+                    Asistente
+                  </Button>
+                  
+                  {togglePreview && (
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => {
+                        togglePreview();
+                        setMobileMenuOpen(false);
+                      }}
+                    >
+                      <EyeIcon size={16} className="mr-2" />
+                      Vista Previa
+                    </Button>
+                  )}
+                  
+                  {toggleSettings && (
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => {
+                        toggleSettings();
+                        setMobileMenuOpen(false);
+                      }}
+                    >
+                      <Settings size={16} className="mr-2" />
+                      Configuración
+                    </Button>
+                  )}
+                  
+                  {toggleWebView && (
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => {
+                        toggleWebView();
+                        setMobileMenuOpen(false);
+                      }}
+                    >
+                      <ExternalLink size={16} className="mr-2" />
+                      WebView
+                    </Button>
+                  )}
+                  
+                  {toggleTerminal && (
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => {
+                        toggleTerminal();
+                        setMobileMenuOpen(false);
+                      }}
+                    >
+                      <Terminal size={16} className="mr-2" />
+                      Terminal
+                    </Button>
+                  )}
+                  
+                  <Button 
+                    variant="default"
+                    className="w-full justify-start text-amber-300"
+                    onClick={() => {
+                      setShowProjectPlanner(true);
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    <PackageIcon size={16} className="mr-2" />
+                    Planificador de Proyectos
+                  </Button>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
         )}
       </div>
     </header>

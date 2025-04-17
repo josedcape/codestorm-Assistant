@@ -452,13 +452,15 @@ const ProjectPlanner: React.FC = () => {
     }
   };
 
+  const isMobile = useIsMobile();
+  
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.9 }}
-        className="bg-slate-900 rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+        className={`bg-slate-900 rounded-lg shadow-xl ${isMobile ? 'w-full h-full max-h-[100vh]' : 'max-w-5xl w-full max-h-[90vh]'} overflow-hidden flex flex-col`}
       >
         <div className="p-4 border-b border-slate-800 flex justify-between items-center">
           <h2 className="text-xl font-bold">Planificador de Proyectos</h2>
@@ -737,8 +739,8 @@ const ProjectPlanner: React.FC = () => {
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                <div className="md:col-span-3 space-y-4">
+              <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-5'} gap-4`}>
+                <div className={`${isMobile ? '' : 'md:col-span-3'} space-y-4`}>
                   <div className="bg-slate-800 rounded-md p-4">
                     <div className="mb-2 flex justify-between items-center">
                       <div className="font-medium flex items-center">
