@@ -29,7 +29,8 @@ import {
   Trash2,
   Upload,
   GitBranch,
-  FileArchive
+  FileArchive,
+  PlusCircle
 } from 'lucide-react';
 import axios from 'axios';
 import { Code } from 'lucide-react'; // Import the Code icon
@@ -389,6 +390,19 @@ export default function FileExplorer({
     return extToLanguage[extension] || 'text';
   };
 
+  const handleDeleteFile = (file: {path: string; name: string; id?: string}) => {
+    if (!file.id) return;
+
+    // Implementar la lógica para eliminar el archivo
+    if (deleteFile) {
+      deleteFile(file.id).then(() => {
+        toast('Archivo eliminado correctamente');
+        handleRefresh();
+      }).catch(error => {
+        console.error('Error deleting file:', error);
+      });
+    }
+  };
 
   return (
     <div className="w-60 bg-slate-900 border-r border-slate-800 h-full overflow-hidden flex flex-col">
