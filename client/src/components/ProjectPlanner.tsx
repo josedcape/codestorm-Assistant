@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckSquare, Code, Database, FileText, FolderPlus, PlusCircle, Server, Smartphone, Terminal, ChevronRight, Check, AlertTriangle, Loader, Archive, FolderTree, FileCode } from 'lucide-react';
+import { CheckSquare, Code, Database, FileText, FolderPlus, PlusCircle, Server, Smartphone, Terminal, ChevronRight, Check, AlertTriangle, Loader, Archive, FolderTree, FileCode, Bot, Cpu, Brain } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 // Hook para detectar si es dispositivo móvil
@@ -76,6 +76,14 @@ interface ProjectStructure {
   configFiles: string[];
 }
 
+interface AIModel {
+  id: string;
+  name: string;
+  provider: string;
+  icon: React.ReactNode;
+  isPro?: boolean;
+}
+
 const ProjectPlanner: React.FC = () => {
   const { setShowProjectPlanner, currentAgent, developmentMode, executeCommand, createFile } = useAppContext();
 
@@ -85,7 +93,7 @@ const ProjectPlanner: React.FC = () => {
   const [projectName, setProjectName] = useState<string>('mi-proyecto');
   const [projectDescription, setProjectDescription] = useState<string>('');
   const [selectedFramework, setSelectedFramework] = useState<string>('');
-  const [selectedDatabase, setSelectedDatabase] = useState<string>('');
+  const [selectedDatabase, setSelectedDatabase] = useState<string>('none');
   const [additionalLibraries, setAdditionalLibraries] = useState<string[]>([]);
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
   const [files, setFiles] = useState<FileTemplate[]>([]);
@@ -98,6 +106,18 @@ const ProjectPlanner: React.FC = () => {
   const [projectStructure, setProjectStructure] = useState<ProjectStructure | null>(null);
   const [commandHistory, setCommandHistory] = useState<CommandExecution[]>([]);
   const [showSuccessMessage, setShowSuccessMessage] = useState<boolean>(false);
+  const [showAIModelSelector, setShowAIModelSelector] = useState<boolean>(false);
+  const [selectedAIModel, setSelectedAIModel] = useState<string>('gpt-4o');
+
+  // Modelos de IA disponibles
+  const aiModels: AIModel[] = [
+    { id: 'gpt-4o', name: 'GPT-4o', provider: 'OpenAI', icon: <Bot className="text-blue-400" /> },
+    { id: 'gpt-4', name: 'GPT-4', provider: 'OpenAI', icon: <Bot className="text-blue-400" /> },
+    { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', provider: 'OpenAI', icon: <Bot className="text-blue-400" /> },
+    { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', provider: 'Google', icon: <Cpu className="text-green-400" />, isPro: true },
+    { id: 'claude-3', name: 'Claude 3', provider: 'Anthropic', icon: <Brain className="text-purple-400" /> },
+    { id: 'claude-2.1', name: 'Claude 2.1', provider: 'Anthropic', icon: <Brain className="text-purple-400" /> }
+  ];
 
   // Frameworks disponibles según el tipo de proyecto
   const frameworks = {
@@ -133,6 +153,10 @@ const ProjectPlanner: React.FC = () => {
     return [...frameworks.web, ...frameworks.mobile, ...frameworks.desktop].find(f => f.id === id);
   };
 
+  const getAIModelById = (id: string) => {
+    return aiModels.find(model => model.id === id);
+  };
+
   // Generar checklist en base a las selecciones del usuario
   useEffect(() => {
     if (selectedFramework) {
@@ -154,7 +178,7 @@ const ProjectPlanner: React.FC = () => {
     }
     ];
 
-    if (selectedDatabase) {
+    if (selectedDatabase && selectedDatabase !== 'none') {
     newChecklist.push({
     id: '3',
     title: `Configurar ${selectedDatabase}`,
@@ -501,6 +525,109 @@ const ProjectPlanner: React.FC = () => {
     Plan de Desarrollo de Proyectos
     </h3>
 
+    {/* Selector de Modelo de IA */}
+    <div className="p-4 bg-slate-800/80 border border-slate-700 rounded-md mb-6">
+      <div className="flex justify-between items-center mb-2">
+        <h4 className="text-sm font-medium flex items-center">
+          <Bot size={18} className="mr-2 text-blue-400" />
+          Modelo de IA
+        </h4>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="h-8 px-2 text-xs"
+          onClick={() => setShowAIModelSelector(!showAIModelSelector)}
+        >
+          {showAIModelSelector ? 'Cerrar' : 'Cambiar modelo'}
+        </Button>
+      </div>
+
+      <div className="flex items-center space-x-2 p-2 bg-slate-900 rounded-md">
+        {getAIModelById(selectedAIModel)?.icon}
+        <div>
+          <div className="font-medium">{getAIModelById(selectedAIModel)?.name}</div>
+          <div className="text-xs text-slate-400">{getAIModelById(selectedAIModel)?.provider}</div>
+        </div>
+        {getAIModelById(selectedAIModel)?.isPro && (
+          <span className="ml-auto px-1.5 py-0.5 text-[10px] bg-amber-900/60 text-amber-300 rounded-full border border-amber-700">PRO</span>
+        )}
+      </div>
+
+      {showAIModelSelector && (
+        <motion.div 
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          exit={{ opacity: 0, height: 0 }}
+          className="mt-3 border-t border-slate-700 pt-3"
+        >
+          <div className="text-xs text-slate-400 mb-2">Selecciona un modelo de IA para asistirte:</div>
+
+          {/* Sección OpenAI */}
+          <div className="mb-3">
+            <div className="text-xs font-medium text-slate-500 mb-1.5">OpenAI</div>
+            <div className="space-y-1.5">
+              {aiModels.filter(m => m.provider === 'OpenAI').map(model => (
+                <div 
+                  key={model.id}
+                  className={`flex items-center p-2 rounded-md cursor-pointer ${selectedAIModel === model.id ? 'bg-blue-900/30 border border-blue-800' : 'hover:bg-slate-800'}`}
+                  onClick={() => setSelectedAIModel(model.id)}
+                >
+                  <div className="mr-2">{model.icon}</div>
+                  <div className="text-sm">{model.name}</div>
+                  {selectedAIModel === model.id && (
+                    <Check size={16} className="ml-auto text-blue-400" />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Sección Google */}
+          <div className="mb-3">
+            <div className="text-xs font-medium text-slate-500 mb-1.5">Google</div>
+            <div className="space-y-1.5">
+              {aiModels.filter(m => m.provider === 'Google').map(model => (
+                <div 
+                  key={model.id}
+                  className={`flex items-center p-2 rounded-md cursor-pointer ${selectedAIModel === model.id ? 'bg-green-900/30 border border-green-800' : 'hover:bg-slate-800'}`}
+                  onClick={() => setSelectedAIModel(model.id)}
+                >
+                  <div className="mr-2">{model.icon}</div>
+                  <div className="text-sm">{model.name}</div>
+                  {model.isPro && (
+                    <span className="ml-auto px-1.5 py-0.5 text-[10px] bg-amber-900/60 text-amber-300 rounded-full border border-amber-700 mr-2">PRO</span>
+                  )}
+                  {selectedAIModel === model.id && (
+                    <Check size={16} className="ml-auto text-green-400" />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Sección Anthropic */}
+          <div>
+            <div className="text-xs font-medium text-slate-500 mb-1.5">Anthropic</div>
+            <div className="space-y-1.5">
+              {aiModels.filter(m => m.provider === 'Anthropic').map(model => (
+                <div 
+                  key={model.id}
+                  className={`flex items-center p-2 rounded-md cursor-pointer ${selectedAIModel === model.id ? 'bg-purple-900/30 border border-purple-800' : 'hover:bg-slate-800'}`}
+                  onClick={() => setSelectedAIModel(model.id)}
+                >
+                  <div className="mr-2">{model.icon}</div>
+                  <div className="text-sm">{model.name}</div>
+                  {selectedAIModel === model.id && (
+                    <Check size={16} className="ml-auto text-purple-400" />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </div>
+
     <div className="p-4 bg-blue-900/20 border border-blue-800 rounded-md mb-6">
     <h4 className="text-sm font-medium flex items-center">
     <AlertTriangle size={18} className="mr-2 text-amber-400" />
@@ -647,7 +774,7 @@ const ProjectPlanner: React.FC = () => {
     <SelectValue placeholder="Selecciona una base de datos (opcional)" />
     </SelectTrigger>
     <SelectContent>
-    <SelectItem value="">Ninguna</SelectItem>
+    <SelectItem value="none">Ninguna</SelectItem>
     {databases.map(db => (
     <SelectItem key={db.id} value={db.id}>{db.name}</SelectItem>
     ))}
@@ -860,7 +987,7 @@ const ProjectPlanner: React.FC = () => {
     {projectStructure ? (
     <div className="space-y-2">
     <div className="flex items-center p-2 bg-slate-700 rounded-md">
-    <FolderOpen size={18} className="text-amber-400 mr-2" />
+    <FolderPlus size={18} className="text-amber-400 mr-2" />
     <span className="font-medium">{projectStructure.rootFolder}</span>
     </div>
 
@@ -873,7 +1000,7 @@ const ProjectPlanner: React.FC = () => {
     className="flex items-center p-1.5 hover:bg-slate-700 rounded"
     >
     {file.isDirectory ? (
-    <FolderOpen size={16} className="text-amber-400 mr-2" />
+    <FolderPlus size={16} className="text-amber-400 mr-2" />
     ) : (
     <FileCode size={16} className="text-blue-400 mr-2" />
     )}
