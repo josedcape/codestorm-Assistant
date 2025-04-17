@@ -67,7 +67,7 @@ Responde siempre en español y ofrece soluciones técnicas avanzadas con ejemplo
 
   try {
     console.log("Enviando solicitud a OpenAI...");
-    
+
     // Verificar que la clave API sea válida
     if (!openaiKey || openaiKey === 'your-openai-api-key' || openaiKey.startsWith('sk-proj-')) {
       throw new Error('La clave API de OpenAI no es válida. Por favor, configura una clave válida');
@@ -76,7 +76,7 @@ Responde siempre en español y ofrece soluciones técnicas avanzadas con ejemplo
     const response = await axios.post(
       "https://api.openai.com/v1/chat/completions",
       {
-        model: "gpt-4",  // Cambiado de gpt-4o a gpt-4
+        model: "gpt-4o",  // Actualizado a gpt-4o
         messages,
         temperature: 0.7,
         max_tokens: 1000,
@@ -126,9 +126,9 @@ async function generateGeminiResponse(prompt: string, code?: string) {
     : prompt;
 
   try {
-    // Endpoint actualizado para Gemini 1.5 Pro
+    // Endpoint actualizado para Gemini 2.5 Pro
     const response = await axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent`,
       {
         contents: [
           {
@@ -184,7 +184,7 @@ async function generateGeminiResponse(prompt: string, code?: string) {
 async function generateClaudeResponse(
   prompt: string,
   code?: string,
-  model: string = "claude-3-sonnet-20240229",
+  model: string = "claude-3.5-sonnet-v2",
 ) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -259,20 +259,20 @@ export async function handleAIGenerate(req: Request, res: Response) {
     console.log("OpenAI:", openaiKey ? "Configurada" : "No configurada");
     console.log("Anthropic:", anthropicKey ? "Configurada" : "No configurada");
     console.log("Gemini:", geminiKey ? "Configurada" : "No configurada");
-    
+
     let response: string;
     let warning = null;
 
     try {
-      // Comprobar disponibilidad de modelos
+      // Comprobar disponibilidad de modelos (actualizado con los nombres correctos)
       const modelos_disponibles = [];
-      if (openaiKey) modelos_disponibles.push("gpt-4o");
-      if (geminiKey) modelos_disponibles.push("gemini-2.5");
-      if (anthropicKey) modelos_disponibles.push("claude-3-7", "claude-3-5-sonnet-v2");
-      
+      if (openaiKey) modelos_disponibles.push("gpt-4o", "gpt-4.1", "o3-mini");
+      if (geminiKey) modelos_disponibles.push("gemini-2.5-pro");
+      if (anthropicKey) modelos_disponibles.push("claude-3.7-sonnet", "claude-3.5-sonnet-v2");
+
       console.log("Modelos disponibles:", modelos_disponibles);
       console.log("Modelo solicitado:", model);
-      
+
       // Si el modelo solicitado no está disponible, usar un modelo alternativo
       let modelToUse = model;
       if (!modelos_disponibles.includes(model) && modelos_disponibles.length > 0) {
@@ -281,9 +281,11 @@ export async function handleAIGenerate(req: Request, res: Response) {
         warning = `El modelo ${model} no está disponible. Usando ${modelo_alternativo} como alternativa.`;
         modelToUse = modelo_alternativo;
       }
-      
+
       switch (modelToUse) {
         case "gpt-4o":
+        case "gpt-4.1":
+        case "o3-mini":
           if (!openaiKey) {
             return res
               .status(400)
@@ -291,7 +293,7 @@ export async function handleAIGenerate(req: Request, res: Response) {
           }
           response = await generateOpenAIResponse(prompt, code, agentType, openaiKey.toString());
           break;
-        case "gemini-2.5":
+        case "gemini-2.5-pro":
           if (!geminiKey) {
             return res
               .status(400)
@@ -299,18 +301,15 @@ export async function handleAIGenerate(req: Request, res: Response) {
           }
           response = await generateGeminiResponse(prompt, code);
           break;
-        case "claude-3-7":
-        case "claude-3-5-sonnet-v2":
+        case "claude-3.7-sonnet":
+        case "claude-3.5-sonnet-v2":
           if (!anthropicKey) {
             return res
               .status(400)
               .json({ error: "API key de Anthropic no configurada. Por favor, configura la clave en la sección de API Keys." });
           }
-          const claudeModel =
-            modelToUse === "claude-3-7"
-              ? "claude-3-opus-20240229"
-              : "claude-3-sonnet-20240229";
-          response = await generateClaudeResponse(prompt, code, claudeModel);
+          // Usar el modelo adecuado para Claude
+          response = await generateClaudeResponse(prompt, code, modelToUse);
           break;
         case "qwen-2.5-omni-7b":
           // Para modelos locales, podríamos implementar una solución diferente
@@ -340,38 +339,36 @@ export async function handleAIGenerate(req: Request, res: Response) {
       return res.json({ response, warning });
     } catch (modelError: any) {
       console.error(`Error específico del modelo ${model}:`, modelError);
-      
+
       // Intentar con el siguiente modelo disponible
       for (const modelo_alternativo of modelos_disponibles) {
         if (modelo_alternativo !== model) {
           try {
             console.log(`Intentando con ${modelo_alternativo} como alternativa...`);
             warning = `El modelo ${model} falló. Usando ${modelo_alternativo} como alternativa.`;
-            
+
             switch (modelo_alternativo) {
               case "gpt-4o":
+              case "gpt-4.1":
+              case "o3-mini":
                 response = await generateOpenAIResponse(prompt, code, agentType);
                 break;
-              case "gemini-2.5":
+              case "gemini-2.5-pro":
                 response = await generateGeminiResponse(prompt, code);
                 break;
-              case "claude-3-7":
-              case "claude-3-5-sonnet-v2":
-                const claudeModel = 
-                  modelo_alternativo === "claude-3-7"
-                    ? "claude-3-opus-20240229"
-                    : "claude-3-sonnet-20240229";
-                response = await generateClaudeResponse(prompt, code, claudeModel);
+              case "claude-3.7-sonnet":
+              case "claude-3.5-sonnet-v2":
+                response = await generateClaudeResponse(prompt, code, modelo_alternativo);
                 break;
             }
-            
+
             return res.json({ response, warning });
           } catch (fallbackError) {
             console.error(`El fallback a ${modelo_alternativo} también falló:`, fallbackError);
           }
         }
       }
-      
+
       // Si llegamos aquí, ningún modelo funcionó
       throw new Error(`Todos los modelos disponibles fallaron. Error original: ${modelError.message}`);
     }
@@ -456,7 +453,7 @@ Devuelve la respuesta en el siguiente formato:
 3. Una explicación general de las mejoras
 `;
 
-    // Usar el modelo de GPT-4 para obtener la mejor corrección
+    // Usar el modelo de GPT-4o para obtener la mejor corrección (actualizado desde GPT-4)
     const response = await generateOpenAIResponse(prompt);
 
     // Procesar la respuesta para extraer el código corregido y explicaciones
