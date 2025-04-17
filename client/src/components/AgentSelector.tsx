@@ -44,12 +44,14 @@ export default function AgentSelector({ onAgentChange, currentAgent }: AgentSele
   const handleAgentChange = (agent: AgentType) => {
     onAgentChange(agent);
 
-    // Mostrar notificación
     const agentInfo = agentConfig[agent];
     toast({
-      title: "Agente cambiado",
-      description: `Agente de ${agentInfo.title} activado`,
+      title: "Agente Activado",
+      description: `${agentInfo.title} - ${agentInfo.description}`,
       variant: "default",
+      className: "bg-slate-800 border-slate-700",
+      duration: 3000,
+      icon: agentInfo.icon
     });
   };
 

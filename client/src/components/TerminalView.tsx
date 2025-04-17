@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { ScrollArea } from './ui/scroll-area';
 import { Terminal as TerminalIcon, Maximize2, Minimize2, X } from 'lucide-react';
@@ -33,7 +32,7 @@ const TerminalView: React.FC<TerminalViewProps> = ({
     if (terminalRef.current) {
       terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
     }
-    
+
     // Dar foco al input cuando el componente se monte
     inputRef.current?.focus();
   }, [output]);
@@ -41,23 +40,23 @@ const TerminalView: React.FC<TerminalViewProps> = ({
   const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && command.trim()) {
       e.preventDefault();
-      
+
       // Agregar el comando al historial
       const newHistory = [...history, command];
       if (newHistory.length > 50) newHistory.shift(); // Limitar historial a 50 comandos
       setHistory(newHistory);
       setHistoryIndex(-1);
-      
+
       // Mostrar el comando en la terminal
       setOutput(prev => [...prev, { type: 'command', content: `$ ${command}` }]);
-      
+
       // Procesar comando especial "clear"
       if (command.toLowerCase() === 'clear') {
         setOutput([]);
         setCommand('');
         return;
       }
-      
+
       // Ejecutar el comando
       executeCommand(command);
       setCommand('');
@@ -88,9 +87,24 @@ const TerminalView: React.FC<TerminalViewProps> = ({
     try {
       const response = await axios.post('/api/terminal/execute', { command: cmd });
       const result = response.data.output || 'Comando ejecutado.';
-      
+
       // Mostrar la salida en la terminal
       setOutput(prev => [...prev, { type: 'output', content: result }]);
+      // Check if command creates a file
+      if (cmd.startsWith('touch ') || cmd.includes(' > ')) {
+        const fileName = cmd.startsWith('touch ')
+          ? cmd.split(' ')[1]
+          : cmd.split(' > ')[0].trim();
+
+        const event = new CustomEvent('fileCreated', {
+          detail: {
+            name: fileName,
+            path: `/${fileName}`,
+            content: ''
+          }
+        });
+        window.dispatchEvent(event);
+      }
     } catch (error: any) {
       const errorMessage = error.response?.data?.error || 'Error al ejecutar el comando';
       setOutput(prev => [...prev, { type: 'output', content: `Error: ${errorMessage}` }]);
@@ -126,7 +140,7 @@ const TerminalView: React.FC<TerminalViewProps> = ({
           </Button>
         </div>
       </div>
-      
+
       <ScrollArea 
         ref={terminalRef} 
         className="flex-grow p-3 font-mono text-sm overflow-auto"

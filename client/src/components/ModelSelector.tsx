@@ -38,13 +38,14 @@ export default function ModelSelector({
   const handleModelChange = (value: string) => {
     if (onModelChange) {
       onModelChange(value as AIModel);
-
-      // Mostrar notificación
+      
       const modelInfo = MODEL_INFO[value as AIModel];
       toast({
-        title: "Modelo actualizado",
+        title: "Modelo Actualizado",
         description: `${modelInfo?.name || value} activado correctamente`,
         variant: "default",
+        className: "bg-slate-800 border-slate-700",
+        duration: 3000,
       });
     }
   };

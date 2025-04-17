@@ -100,12 +100,30 @@ export default function FileExplorer({
   const projectFolders = extractFoldersFromFiles(projectFiles);
 
   // Iniciar con un espacio de trabajo vacío si no hay archivos
-  const effectiveFiles = files.length > 0 ? files : 
-    (projectFiles.length > 0 ? projectFiles.map(file => ({
-      path: file.path || '',
-      name: file.name,
-      id: file.id
-    })) : []);
+  // Start with empty files array
+  const effectiveFiles = files;
+
+  useEffect(() => {
+    // Listen for file creation events from terminal
+    const handleFileCreation = (event: CustomEvent) => {
+      const { path, name, content } = event.detail;
+      if (onCreateFile) {
+        onCreateFile(name, content || '');
+      }
+      toast({
+        title: "Archivo Creado",
+        description: `${name} creado correctamente`,
+        variant: "default",
+        className: "bg-slate-800 border-slate-700",
+        duration: 3000,
+      });
+    };
+
+    window.addEventListener('fileCreated', handleFileCreation as EventListener);
+    return () => {
+      window.removeEventListener('fileCreated', handleFileCreation as EventListener);
+    };
+  }, [onCreateFile]);
 
   const effectiveFolders = folders.length > 0 ? folders : 
     (projectFolders.length > 0 ? projectFolders : []);
