@@ -239,6 +239,7 @@ async function generateClaudeResponse(
 // Ruta para manejar la generación de respuestas
 export async function handleAIGenerate(req: Request, res: Response) {
   try {
+<<<<<<< HEAD
     let { model, prompt, code, agentType } = req.body;
     let response;
     let warning = null;
@@ -284,10 +285,68 @@ export async function handleAIGenerate(req: Request, res: Response) {
         case "gemini-2.5":
           if (!geminiKey) throw new Error("API key de Gemini no configurada");
           console.log("Enviando solicitud a Gemini...");
+=======
+    const { model, prompt, code, agentType } = req.body;
+
+    if (!prompt) {
+      return res.status(400).json({ error: "Se requiere un prompt" });
+    }
+
+    console.log(
+      `Generando respuesta con modelo ${model} y agente ${agentType || "default"}. Prompt: ${prompt.substring(0, 50)}...`,
+    );
+
+    // Obtener claves API de los headers, localStorage o variables de entorno
+    const openaiKey = req.headers['x-openai-key'] || process.env.OPENAI_API_KEY;
+    const anthropicKey = req.headers['x-anthropic-key'] || process.env.ANTHROPIC_API_KEY;
+    const geminiKey = req.headers['x-gemini-key'] || process.env.GEMINI_API_KEY;
+
+    // Mostrar información sobre las claves para depuración
+    console.log("API Keys disponibles:");
+    console.log("OpenAI:", openaiKey ? "Configurada" : "No configurada");
+    console.log("Anthropic:", anthropicKey ? "Configurada" : "No configurada");
+    console.log("Gemini:", geminiKey ? "Configurada" : "No configurada");
+    
+    let response: string;
+
+    try {
+      // Comprobar disponibilidad de modelos
+      const modelos_disponibles = [];
+      if (openaiKey) modelos_disponibles.push("gpt-4o");
+      if (geminiKey) modelos_disponibles.push("gemini-2.5");
+      if (anthropicKey) modelos_disponibles.push("claude-3-7", "claude-3-5-sonnet-v2");
+      
+      console.log("Modelos disponibles:", modelos_disponibles);
+      console.log("Modelo solicitado:", model);
+      
+      // Si el modelo solicitado no está disponible, usar un modelo alternativo
+      if (!modelos_disponibles.includes(model) && modelos_disponibles.length > 0) {
+        const modelo_alternativo = modelos_disponibles[0];
+        console.log(`Modelo ${model} no disponible, usando alternativa: ${modelo_alternativo}`);
+        model = modelo_alternativo;
+      }
+      
+      switch (model) {
+        case "gpt-4o":
+          if (!openaiKey) {
+            return res
+              .status(400)
+              .json({ error: "API key de OpenAI no configurada. Por favor, configura la clave en la sección de API Keys." });
+          }
+          response = await generateOpenAIResponse(prompt, code, agentType, openaiKey.toString());
+          break;
+        case "gemini-2.5":
+          if (!geminiKey) {
+            return res
+              .status(400)
+              .json({ error: "API key de Gemini no configurada. Por favor, configura la clave en la sección de API Keys." });
+          }
+>>>>>>> 978d6ec3b39552984615492ea4f9e4b2e102b17d
           response = await generateGeminiResponse(prompt, code);
           break;
         case "claude-3-7":
         case "claude-3-5-sonnet-v2":
+<<<<<<< HEAD
           if (!anthropicKey) throw new Error("API key de Anthropic no configurada");
           console.log("Enviando solicitud a Anthropic...");
           response = await generateClaudeResponse(prompt, code, model);
@@ -335,6 +394,77 @@ export async function handleAIGenerate(req: Request, res: Response) {
     res.status(500).json({
       error: `⚠️ **Error**: ${error.message}`,
     });
+=======
+          if (!anthropicKey) {
+            return res
+              .status(400)
+              .json({ error: "API key de Anthropic no configurada. Por favor, configura la clave en la sección de API Keys." });
+          }
+          const claudeModel =
+            model === "claude-3-7"
+              ? "claude-3-opus-20240229"
+              : "claude-3-sonnet-20240229";
+          response = await generateClaudeResponse(prompt, code, claudeModel);
+          break;
+        case "qwen-2.5-omni-7b":
+          // Para modelos locales, podríamos implementar una solución diferente
+          // Por ahora, usamos OpenAI como fallback si está configurado
+          if (process.env.OPENAI_API_KEY) {
+            response = await generateOpenAIResponse(prompt, code);
+          } else {
+            return res
+              .status(400)
+              .json({
+                error: "No hay un modelo disponible para usar como fallback",
+              });
+          }
+          break;
+        default:
+          // Intentar usar OpenAI como fallback
+          if (process.env.OPENAI_API_KEY) {
+            response = await generateOpenAIResponse(prompt, code);
+          } else {
+            return res
+              .status(400)
+              .json({ error: "Modelo no válido y no hay fallback disponible" });
+          }
+      }
+
+      console.log(`Respuesta generada exitosamente con modelo ${model}`);
+      res.json({ response });
+    } catch (modelError: any) {
+      console.error(`Error específico del modelo ${model}:`, modelError);
+
+      // Intentar con otro modelo si el principal falla
+      if (model !== "gpt-4o" && process.env.OPENAI_API_KEY) {
+        console.log("Intentando con GPT-4o como fallback...");
+        try {
+          response = await generateOpenAIResponse(prompt, code);
+          return res.json({
+            response,
+            warning: `El modelo ${model} falló, usando GPT-4o como alternativa.`,
+          });
+        } catch (fallbackError) {
+          console.error("El fallback a GPT-4o también falló:", fallbackError);
+        }
+      }
+
+      // Si llegamos aquí, tanto el modelo original como el fallback fallaron
+      throw modelError;
+    }
+  } catch (error: any) {
+    console.error("Error al generar respuesta de IA:", error);
+    let errorMessage = "⚠️ Error interno del servidor";
+
+    if (error.response && error.response.data) {
+      console.error("Detalles de la respuesta de error:", error.response.data);
+      errorMessage = `⚠️ **Error**: ${error.message}\n\n**Detalles**: ${JSON.stringify(error.response.data)}`;
+    } else if (error.message) {
+      errorMessage = `⚠️ **Error**: ${error.message}`;
+    }
+
+    res.status(500).json({ error: errorMessage });
+>>>>>>> 978d6ec3b39552984615492ea4f9e4b2e102b17d
   }
 }
 
@@ -519,7 +649,11 @@ function extractExplanation(response: string): string | undefined {
   }
 
   return undefined;
+<<<<<<< HEAD
 }
 
 
 
+=======
+}
+>>>>>>> 978d6ec3b39552984615492ea4f9e4b2e102b17d

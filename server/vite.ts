@@ -5,9 +5,12 @@ import { createServer as createViteServer, createLogger } from "vite";
 import { type Server } from "http";
 import viteConfig from "../vite.config";
 import { nanoid } from "nanoid";
+<<<<<<< HEAD
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+=======
+>>>>>>> 978d6ec3b39552984615492ea4f9e4b2e102b17d
 
 const viteLogger = createLogger();
 
@@ -49,12 +52,20 @@ export async function setupVite(app: Express, server: Server) {
 
     try {
       const clientTemplate = path.resolve(
+<<<<<<< HEAD
         __dirname,
+=======
+        import.meta.dirname,
+>>>>>>> 978d6ec3b39552984615492ea4f9e4b2e102b17d
         "..",
         "client",
         "index.html",
       );
 
+<<<<<<< HEAD
+=======
+      // always reload the index.html file from disk incase it changes
+>>>>>>> 978d6ec3b39552984615492ea4f9e4b2e102b17d
       let template = await fs.promises.readFile(clientTemplate, "utf-8");
       template = template.replace(
         `src="/src/main.tsx"`,
@@ -70,7 +81,11 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
+<<<<<<< HEAD
   const distPath = path.resolve(__dirname, "..", "dist", "public");
+=======
+  const distPath = path.resolve(import.meta.dirname, "public");
+>>>>>>> 978d6ec3b39552984615492ea4f9e4b2e102b17d
 
   if (!fs.existsSync(distPath)) {
     throw new Error(
@@ -85,5 +100,8 @@ export function serveStatic(app: Express) {
     res.sendFile(path.resolve(distPath, "index.html"));
   });
 }
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> 978d6ec3b39552984615492ea4f9e4b2e102b17d
