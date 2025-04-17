@@ -5,7 +5,6 @@ import {
   SelectContent, 
   SelectGroup, 
   SelectItem, 
-  SelectLabel, 
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
@@ -35,11 +34,11 @@ export default function ModelSelector({
 }: ModelSelectorProps) {
   const { toast } = useToast();
 
-  const handleModelChange = (value: string) => {
+  const handleModelChange = (value: AIModel) => {
     if (onModelChange) {
-      onModelChange(value as AIModel);
-      
-      const modelInfo = MODEL_INFO[value as AIModel];
+      onModelChange(value);
+
+      const modelInfo = MODEL_INFO[value];
       toast({
         title: "Modelo Actualizado",
         description: `${modelInfo?.name || value} activado correctamente`,
@@ -65,7 +64,7 @@ export default function ModelSelector({
   };
 
   // Verificar el estado de las claves API
-  const apiKeyStatus: Record<string, boolean> = {
+  const apiKeyStatus: Record<AIModel, boolean> = {
     'gpt-4o': !!localStorage.getItem('openai_api_key'),
     'gpt-4': !!localStorage.getItem('openai_api_key'),
     'gpt-3.5-turbo': !!localStorage.getItem('openai_api_key'),
@@ -75,7 +74,7 @@ export default function ModelSelector({
     'qwen-2.5-omni-7b': true
   };
 
-  const currentModelInfo = MODEL_INFO[currentModel as AIModel];
+  const currentModelInfo = MODEL_INFO[currentModel];
 
   return (
     <div className="space-y-4">
