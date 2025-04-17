@@ -75,12 +75,12 @@ export default function FileExplorer({
   // Extraer carpetas únicas de las rutas de archivos
   const extractFoldersFromFiles = (files: any[]) => {
     const folderPaths = new Set<string>();
-    
+
     files.forEach(file => {
       if (file.path) {
         const pathParts = file.path.split('/');
         let currentPath = '';
-        
+
         // Construir las rutas de carpetas
         for (let i = 1; i < pathParts.length - 1; i++) {
           currentPath += '/' + pathParts[i];
@@ -88,7 +88,7 @@ export default function FileExplorer({
         }
       }
     });
-    
+
     return Array.from(folderPaths).map(path => ({
       path,
       name: path.split('/').pop() || '',
@@ -393,9 +393,14 @@ export default function FileExplorer({
   return (
     <div className="w-60 bg-slate-900 border-r border-slate-800 h-full overflow-hidden flex flex-col">
       {/* Cabecera */}
-      <div className="p-2 border-b border-slate-800 flex items-center justify-between">
+      <motion.div 
+        className="p-2 border-b border-slate-800 flex items-center justify-between"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
         <h3 className="font-medium text-sm">Explorador</h3>
-        <div className="flex space-x-1">
+        <motion.div className="flex space-x-1" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -446,8 +451,8 @@ export default function FileExplorer({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
       {/* Barra de búsqueda */}
       <div className="p-2 border-b border-slate-800">
@@ -582,7 +587,11 @@ export default function FileExplorer({
               );
 
               return (
-                <div key={folder.path} className="mb-1">
+                <motion.div key={folder.path} className="mb-1"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
                   <div
                     className="flex items-center py-1 px-2 rounded-md hover:bg-slate-800 cursor-pointer text-sm"
                     onClick={() => toggleFolder(folder.path)}
@@ -602,9 +611,12 @@ export default function FileExplorer({
                   {isExpanded && filesInFolder.length > 0 && (
                     <div className="ml-6">
                       {filesInFolder.map((file) => (
-                        <div
+                        <motion.div
                           key={file.path}
                           className="flex items-center justify-between py-1 px-2 rounded-md hover:bg-slate-800 text-sm group"
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3 }}
                         >
                           <div 
                             className="flex items-center cursor-pointer flex-1"
@@ -643,11 +655,11 @@ export default function FileExplorer({
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
-                        </div>
+                        </motion.div>
                       ))}
                     </div>
                   )}
-                </div>
+                </motion.div>
               );
             })}
 
@@ -656,9 +668,12 @@ export default function FileExplorer({
               // Solo mostrar archivos que no están en ninguna carpeta conocida
               return !filteredFolders.some(folder => file.path.startsWith(folder.path + '/'));
             }).map((file) => (
-              <div
+              <motion.div
                 key={file.path}
                 className="flex items-center justify-between py-1 px-2 rounded-md hover:bg-slate-800 text-sm group"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
               >
                 <div 
                   className="flex items-center cursor-pointer flex-1"
@@ -697,7 +712,7 @@ export default function FileExplorer({
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </>
         )}

@@ -61,25 +61,32 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="bg-slate-900 border-b border-slate-800 text-white py-2 px-4">
+    <header className="w-full bg-slate-800 border-b border-slate-700 py-2 px-4">
       <div className="flex items-center justify-between">
-        {/* Logo y nombre */}
-        <div className="flex items-center">
+        <div className="flex items-center space-x-4">
+          {isMobile && (
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button variant="ghost" size="icon" onClick={toggleMobileMenu}>
+                <MenuIcon size={18} />
+              </Button>
+            </motion.div>
+          )}
           <motion.div 
-            className="h-8 w-8 mr-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
+            className="flex items-center"
+            initial={{ x: -20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
           >
             <RobotLogo />
+            <motion.span 
+              className="text-xl font-semibold ml-2 text-slate-100"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+            >
+              CODESTORM
+            </motion.span>
           </motion.div>
-          <motion.h1 
-            className="text-xl font-bold futuristic-title"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            CODESTORM
-          </motion.h1>
         </div>
 
         {/* Botones de navegación */}

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { AIModel, MODEL_INFO, DevelopmentMode } from '@/lib/aiService';
 import { 
@@ -13,7 +12,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, BrainCircuit, Robot, Sparkles } from "lucide-react";
+import { AlertCircle, BrainCircuit, Bot, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from "@/components/ui/badge";
@@ -35,11 +34,11 @@ export default function ModelSelector({
   showNoApiWarning = false,
 }: ModelSelectorProps) {
   const { toast } = useToast();
-  
+
   const handleModelChange = (value: string) => {
     if (onModelChange) {
       onModelChange(value as AIModel);
-      
+
       // Mostrar notificación
       const modelInfo = MODEL_INFO[value as AIModel];
       toast({
@@ -54,7 +53,7 @@ export default function ModelSelector({
     if (onDevelopmentModeChange) {
       const newMode: DevelopmentMode = developmentMode === 'interactive' ? 'autonomous' : 'interactive';
       onDevelopmentModeChange(newMode);
-      
+
       // Mostrar notificación
       toast({
         title: "Modo de desarrollo cambiado",
@@ -127,7 +126,7 @@ export default function ModelSelector({
                 </div>
               </SelectItem>
             </SelectGroup>
-            
+
             <SelectGroup>
               <SelectLabel className="text-slate-400">Google</SelectLabel>
               <SelectItem value="gemini-2.5-pro" className="text-white hover:bg-slate-700">
@@ -148,7 +147,7 @@ export default function ModelSelector({
               <SelectItem value="claude-3" className="text-white hover:bg-slate-700">
                 <div className="flex items-center justify-between w-full">
                   <span className="flex items-center">
-                    <Robot size={14} className="mr-2 text-purple-400" />
+                    <Bot size={14} className="mr-2 text-purple-400" />
                     Claude 3
                   </span>
                   {!apiKeyStatus['claude-3'] && (
@@ -159,7 +158,7 @@ export default function ModelSelector({
               <SelectItem value="claude-2.1" className="text-white hover:bg-slate-700">
                 <div className="flex items-center justify-between w-full">
                   <span className="flex items-center">
-                    <Robot size={14} className="mr-2 text-purple-400" />
+                    <Bot size={14} className="mr-2 text-purple-400" />
                     Claude 2.1
                   </span>
                   {!apiKeyStatus['claude-2.1'] && (
@@ -224,7 +223,7 @@ export default function ModelSelector({
           onCheckedChange={toggleDevelopmentMode}
         />
       </div>
-      
+
       {developmentMode === 'autonomous' && (
         <motion.div 
           className="p-2 bg-blue-900/20 rounded-md border border-blue-800"

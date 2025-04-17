@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { AgentType } from '@/lib/aiService';
 import { Card, CardContent } from '@/components/ui/card';
@@ -41,10 +40,10 @@ const agentConfig = {
 
 export default function AgentSelector({ onAgentChange, currentAgent }: AgentSelectorProps) {
   const { toast } = useToast();
-  
+
   const handleAgentChange = (agent: AgentType) => {
     onAgentChange(agent);
-    
+
     // Mostrar notificación
     const agentInfo = agentConfig[agent];
     toast({
@@ -53,7 +52,7 @@ export default function AgentSelector({ onAgentChange, currentAgent }: AgentSele
       variant: "default",
     });
   };
-  
+
   return (
     <div className="space-y-3">
       <div className="text-sm font-medium">Tipo de agente</div>
@@ -134,7 +133,7 @@ const AgentCard = ({
               </p>
             </div>
           </div>
-          
+
           {isSelected && (
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
