@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { RobotLogo } from './RobotLogo';
 import { useAppContext } from '@/context/AppContext';
@@ -43,6 +43,7 @@ const Header: React.FC<HeaderProps> = ({
   } = useAppContext();
 
   const isMobile = useIsMobile();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleToggleFileExplorer = () => {
     if (toggleFileExplorer) {
@@ -66,7 +67,7 @@ const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center space-x-4">
           {isMobile && (
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button variant="ghost" size="icon" onClick={toggleMobileMenu}>
+              <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(prev => !prev)}>
                 <MenuIcon size={18} />
               </Button>
             </motion.div>
