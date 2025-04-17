@@ -65,12 +65,12 @@ export default function ModelSelector({
 
   // Verificar el estado de las claves API
   const apiKeyStatus: Record<string, boolean> = {
-    'gpt-4o': !!localStorage.getItem('openai_api_key') || !!process.env.OPENAI_API_KEY,
-    'gpt-4': !!localStorage.getItem('openai_api_key') || !!process.env.OPENAI_API_KEY,
-    'gpt-3.5-turbo': !!localStorage.getItem('openai_api_key') || !!process.env.OPENAI_API_KEY,
-    'gemini-2.5-pro': !!localStorage.getItem('google_api_key') || !!process.env.GEMINI_API_KEY,
-    'claude-3': !!localStorage.getItem('anthropic_api_key') || !!process.env.ANTHROPIC_API_KEY,
-    'claude-2.1': !!localStorage.getItem('anthropic_api_key') || !!process.env.ANTHROPIC_API_KEY,
+    'gpt-4o': !!localStorage.getItem('openai_api_key'),
+    'gpt-4': !!localStorage.getItem('openai_api_key'),
+    'gpt-3.5-turbo': !!localStorage.getItem('openai_api_key'),
+    'gemini-2.5-pro': !!localStorage.getItem('google_api_key'),
+    'claude-3': !!localStorage.getItem('anthropic_api_key'),
+    'claude-2.1': !!localStorage.getItem('anthropic_api_key'),
     'qwen-2.5-omni-7b': true
   };
 
