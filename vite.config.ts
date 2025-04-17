@@ -3,12 +3,9 @@ import react from "@vitejs/plugin-react";
 import themePlugin from "@replit/vite-plugin-shadcn-theme-json";
 import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
-<<<<<<< HEAD
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-=======
->>>>>>> 978d6ec3b39552984615492ea4f9e4b2e102b17d
 
 export default defineConfig({
   plugins: [
@@ -18,15 +15,16 @@ export default defineConfig({
     ...(process.env.NODE_ENV !== "production" &&
     process.env.REPL_ID !== undefined
       ? [
-          await import("@replit/vite-plugin-cartographer").then((m) =>
-            m.cartographer(),
-          ),
+          // Necesitamos envolver esto en una función async, ya que usamos 'await'
+          (async () => {
+            const { cartographer } = await import("@replit/vite-plugin-cartographer");
+            return cartographer();
+          })()
         ]
       : []),
   ],
   resolve: {
     alias: {
-<<<<<<< HEAD
       "@": path.resolve(__dirname, "client", "src"),
       "@shared": path.resolve(__dirname, "shared"),
       "@assets": path.resolve(__dirname, "attached_assets"),
@@ -39,16 +37,3 @@ export default defineConfig({
   },
 });
 
-=======
-      "@": path.resolve(import.meta.dirname, "client", "src"),
-      "@shared": path.resolve(import.meta.dirname, "shared"),
-      "@assets": path.resolve(import.meta.dirname, "attached_assets"),
-    },
-  },
-  root: path.resolve(import.meta.dirname, "client"),
-  build: {
-    outDir: path.resolve(import.meta.dirname, "dist/public"),
-    emptyOutDir: true,
-  },
-});
->>>>>>> 978d6ec3b39552984615492ea4f9e4b2e102b17d
