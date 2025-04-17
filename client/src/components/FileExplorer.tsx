@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from '@/hooks/use-toast';
 import { 
   Folder, 
   File, 
@@ -30,10 +32,11 @@ import {
   Upload,
   GitBranch,
   FileArchive,
-  PlusCircle
+  PlusCircle,
+  Code
 } from 'lucide-react';
 import axios from 'axios';
-import { Code } from 'lucide-react'; // Import the Code icon
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface FileExplorerProps {
   files?: { path: string; name: string; id?: string }[];
@@ -67,13 +70,15 @@ export default function FileExplorer({
   const [importRepoUrl, setImportRepoUrl] = useState('');
   const [showImportDialog, setShowImportDialog] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const zipFileInputRef = useRef<HTMLInputElement>(null);
+  const isMobile = useIsMobile();
 
   const { currentProject, updateFile, deleteFile, openCodeCorrectionModal } = useAppContext();
 
-  // Usar solo los archivos actuales del proyecto
+  // Use only current project files
   const projectFiles = currentProject?.files || [];
 
-  // Extraer carpetas únicas de las rutas de archivos
+  // Extract unique folders from file paths
   const extractFoldersFromFiles = (files: any[]) => {
     const folderPaths = new Set<string>();
 
@@ -82,7 +87,7 @@ export default function FileExplorer({
         const pathParts = file.path.split('/');
         let currentPath = '';
 
-        // Construir las rutas de carpetas
+        // Build folder paths
         for (let i = 1; i < pathParts.length - 1; i++) {
           currentPath += '/' + pathParts[i];
           if (currentPath) folderPaths.add(currentPath);
@@ -99,9 +104,8 @@ export default function FileExplorer({
 
   const projectFolders = extractFoldersFromFiles(projectFiles);
 
-  // Iniciar con un espacio de trabajo vacío si no hay archivos
-  // Start with empty files array
-  const effectiveFiles = files;
+  // Start with empty files array if none provided
+  const effectiveFiles = files.length > 0 ? files : projectFiles;
 
   useEffect(() => {
     // Listen for file creation events from terminal
@@ -114,7 +118,6 @@ export default function FileExplorer({
         title: "Archivo Creado",
         description: `${name} creado correctamente`,
         variant: "default",
-        className: "bg-slate-800 border-slate-700",
         duration: 3000,
       });
     };
@@ -161,10 +164,22 @@ export default function FileExplorer({
       if (success) {
         setNewFileName('');
         setShowNewFileInput(false);
+        toast({
+          title: "Éxito",
+          description: `Archivo ${newFileName} creado correctamente`,
+          variant: "default",
+          duration: 3000,
+        });
         handleRefresh();
       }
     } catch (error) {
       console.error('Error creating file:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo crear el archivo",
+        variant: "destructive",
+        duration: 3000,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -179,10 +194,22 @@ export default function FileExplorer({
       if (success) {
         setNewFolderName('');
         setShowNewFolderInput(false);
+        toast({
+          title: "Éxito",
+          description: `Carpeta ${newFolderName} creada correctamente`,
+          variant: "default",
+          duration: 3000,
+        });
         handleRefresh();
       }
     } catch (error) {
       console.error('Error creating folder:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo crear la carpeta",
+        variant: "destructive",
+        duration: 3000,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -198,6 +225,12 @@ export default function FileExplorer({
       }
     } catch (error) {
       console.error('Error loading file content:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo cargar el contenido del archivo",
+        variant: "destructive",
+        duration: 3000,
+      });
     }
   };
 
@@ -208,14 +241,24 @@ export default function FileExplorer({
     try {
       await updateFile(selectedFile.id, { content: editedContent });
       setShowEditDialog(false);
-      toast('Archivo actualizado correctamente');
+      toast({
+        title: "Éxito",
+        description: "Archivo actualizado correctamente",
+        variant: "default",
+        duration: 3000,
+      });
     } catch (error) {
       console.error('Error saving file:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo guardar los cambios",
+        variant: "destructive",
+        duration: 3000,
+      });
     } finally {
       setIsLoading(false);
     }
   };
-
 
   const handleDownloadFile = async (file: {path: string; name: string; id?: string}) => {
     if (!file.id) return;
@@ -224,7 +267,7 @@ export default function FileExplorer({
       const response = await axios.get(`/api/files/${file.id}`);
       const content = response.data.content || '';
 
-      // Crear un blob y descargarlo
+      // Create a blob and download it
       const blob = new Blob([content], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -234,8 +277,21 @@ export default function FileExplorer({
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Éxito",
+        description: `Archivo ${file.name} descargado`,
+        variant: "default",
+        duration: 3000,
+      });
     } catch (error) {
       console.error('Error downloading file:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo descargar el archivo",
+        variant: "destructive",
+        duration: 3000,
+      });
     }
   };
 
@@ -262,9 +318,23 @@ export default function FileExplorer({
 
         reader.readAsText(file);
       }
+      
+      toast({
+        title: "Éxito",
+        description: "Archivos subidos correctamente",
+        variant: "default",
+        duration: 3000,
+      });
+      
       handleRefresh();
     } catch (error) {
       console.error('Error uploading files:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron subir los archivos",
+        variant: "destructive",
+        duration: 3000,
+      });
     } finally {
       setIsLoading(false);
       // Reset input
@@ -279,24 +349,37 @@ export default function FileExplorer({
 
     setIsLoading(true);
     try {
-      // Enviar petición al servidor para importar el repositorio
+      // Send request to server to import repository
       await axios.post('/api/terminal/execute', {
         command: `mkdir -p /tmp/repo && cd /tmp/repo && git clone ${importRepoUrl} . && cp -r . /home/runner/workspace && rm -rf /tmp/repo`
       });
 
       setImportRepoUrl('');
       setShowImportDialog(false);
-      toast('Repositorio importado correctamente');
+      
+      toast({
+        title: "Éxito",
+        description: "Repositorio importado correctamente",
+        variant: "default",
+        duration: 3000,
+      });
+      
       handleRefresh();
     } catch (error) {
       console.error('Error importing repository:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo importar el repositorio",
+        variant: "destructive",
+        duration: 3000,
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleImportZip = async () => {
-    fileInputRef.current?.click();
+  const handleImportZip = () => {
+    zipFileInputRef.current?.click();
   };
 
   const handleZipUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -305,37 +388,43 @@ export default function FileExplorer({
 
     setIsLoading(true);
     try {
-      // Usar FormData para subir el archivo zip
+      // Use FormData to upload zip file
       const formData = new FormData();
       formData.append('zipFile', files[0]);
 
-      // Enviar el archivo al servidor
+      // Send file to server
       await axios.post('/api/upload-zip', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
 
-      toast('Archivo ZIP importado correctamente');
+      toast({
+        title: "Éxito",
+        description: "Archivo ZIP importado correctamente",
+        variant: "default",
+        duration: 3000,
+      });
+      
       handleRefresh();
     } catch (error) {
       console.error('Error uploading zip:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo importar el archivo ZIP",
+        variant: "destructive",
+        duration: 3000,
+      });
     } finally {
       setIsLoading(false);
       // Reset input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+      if (zipFileInputRef.current) {
+        zipFileInputRef.current.value = '';
       }
     }
   };
 
-  // Función para mostrar notificaciones toast (simplificada)
-  const toast = (message: string) => {
-    console.log(message);
-    // Aquí implementaríamos una notificación real
-  };
-
-  // Filtrar archivos basado en búsqueda
+  // Filter files based on search
   const filteredFiles = searchQuery 
     ? effectiveFiles.filter(file => 
         file.name.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -344,38 +433,42 @@ export default function FileExplorer({
   const filteredFolders = searchQuery
     ? effectiveFolders.filter(folder => 
         folder.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        // También incluir carpetas que contengan archivos que coincidan
+        // Also include folders that contain matching files
         effectiveFiles.some(file => 
           file.path.startsWith(folder.path) && 
           file.name.toLowerCase().includes(searchQuery.toLowerCase())))
     : effectiveFolders;
 
   const handleCorrectFile = (path: string) => {
+    if (!openCodeCorrectionModal) return;
+    
     const file = getFileByPath(path);
-    if (file) {
-      const fileContent = getFileContent(file.path); // Replace with actual content retrieval
-      if (fileContent) {
+    if (file && file.id) {
+      axios.get(`/api/files/${file.id}`).then(response => {
+        const fileContent = response.data.content || '';
         openCodeCorrectionModal({
           name: file.name,
           content: fileContent,
           path: file.path,
           language: getLanguageFromFileName(file.name)
         });
-      }
+      }).catch(error => {
+        console.error('Error fetching file content:', error);
+        toast({
+          title: "Error",
+          description: "No se pudo obtener el contenido del archivo",
+          variant: "destructive",
+          duration: 3000,
+        });
+      });
     }
   };
 
   const getFileByPath = (path: string) => {
-    // Implementar según la estructura de datos de tu aplicación
-    // Ejemplo simple:  This needs to be replaced with your actual file retrieval logic.
-    return effectiveFiles.find(file => file.path === path) || { name: path.split('/').pop() || '', path: path };
-  };
-
-  const getFileContent = (path: string) => {
-    // Implementar según tu estructura
-    // Este es un ejemplo, ajústalo según tu implementación actual
-    const file = getFileByPath(path);
-    return file.path; // Replace with actual content retrieval logic.  This is a placeholder.
+    return effectiveFiles.find(file => file.path === path) || { 
+      name: path.split('/').pop() || '', 
+      path: path 
+    };
   };
 
   const getLanguageFromFileName = (filename: string): string => {
@@ -409,22 +502,31 @@ export default function FileExplorer({
   };
 
   const handleDeleteFile = (file: {path: string; name: string; id?: string}) => {
-    if (!file.id) return;
+    if (!file.id || !deleteFile) return;
 
-    // Implementar la lógica para eliminar el archivo
-    if (deleteFile) {
-      deleteFile(file.id).then(() => {
-        toast('Archivo eliminado correctamente');
-        handleRefresh();
-      }).catch(error => {
-        console.error('Error deleting file:', error);
+    // Implement file deletion logic
+    deleteFile(file.id).then(() => {
+      toast({
+        title: "Éxito",
+        description: "Archivo eliminado correctamente",
+        variant: "default",
+        duration: 3000,
       });
-    }
+      handleRefresh();
+    }).catch(error => {
+      console.error('Error deleting file:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar el archivo",
+        variant: "destructive",
+        duration: 3000,
+      });
+    });
   };
 
   return (
     <div className="w-60 bg-slate-900 border-r border-slate-800 h-full overflow-hidden flex flex-col">
-      {/* Cabecera */}
+      {/* Header */}
       <motion.div 
         className="p-2 border-b border-slate-800 flex items-center justify-between"
         initial={{ opacity: 0 }}
@@ -486,7 +588,7 @@ export default function FileExplorer({
         </motion.div>
       </motion.div>
 
-      {/* Barra de búsqueda */}
+      {/* Search bar */}
       <div className="p-2 border-b border-slate-800">
         <div className="relative">
           <Search size={14} className="absolute left-2 top-2.5 text-slate-400" />
@@ -507,7 +609,7 @@ export default function FileExplorer({
         </div>
       </div>
 
-      {/* Área para crear nuevo archivo/carpeta */}
+      {/* New file/folder creation area */}
       <AnimatePresence>
         {showNewFileInput && (
           <motion.div
@@ -580,7 +682,7 @@ export default function FileExplorer({
         )}
       </AnimatePresence>
 
-      {/* Estructura de archivos */}
+      {/* File structure */}
       <ScrollArea className="flex-grow overflow-y-auto p-1">
         {filteredFolders.length === 0 && filteredFiles.length === 0 ? (
           <div className="text-center py-8 text-slate-500 text-sm flex flex-col items-center justify-center">
@@ -596,7 +698,7 @@ export default function FileExplorer({
                   size="sm" 
                   className="mt-4"
                   onClick={() => {
-                    // Si el contexto tiene setShowProjectPlanner, usarlo aquí
+                    // If context has setShowProjectPlanner, use it here
                     const appContext = document.getElementById('project-planner-button');
                     if (appContext) (appContext as HTMLButtonElement).click();
                   }}
@@ -609,11 +711,11 @@ export default function FileExplorer({
           </div>
         ) : (
           <>
-            {/* Carpetas */}
+            {/* Folders */}
             {filteredFolders.map((folder) => {
               const isExpanded = expandedFolders[folder.path] ?? folder.expanded;
 
-              // Obtener los archivos que están en esta carpeta
+              // Get files in this folder
               const filesInFolder = filteredFiles.filter(file => 
                 file.path.startsWith(folder.path + '/')
               );
@@ -639,7 +741,7 @@ export default function FileExplorer({
                     <span>{folder.name}</span>
                   </div>
 
-                  {/* Archivos dentro de la carpeta */}
+                  {/* Files in folder */}
                   {isExpanded && filesInFolder.length > 0 && (
                     <div className="ml-6">
                       {filesInFolder.map((file) => (
@@ -695,9 +797,9 @@ export default function FileExplorer({
               );
             })}
 
-            {/* Archivos en la raíz */}
+            {/* Root files */}
             {filteredFiles.filter(file => {
-              // Solo mostrar archivos que no están en ninguna carpeta conocida
+              // Only show files not in any known folder
               return !filteredFolders.some(folder => file.path.startsWith(folder.path + '/'));
             }).map((file) => (
               <motion.div
@@ -759,7 +861,16 @@ export default function FileExplorer({
         multiple
       />
 
-      {/* Dialog para editar archivo */}
+      {/* ZIP Upload Input (hidden) */}
+      <input 
+        type="file" 
+        ref={zipFileInputRef} 
+        className="hidden"
+        accept=".zip"
+        onChange={handleZipUpload}
+      />
+
+      {/* Edit file dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
         <DialogContent className="sm:max-w-[500px] bg-slate-900 text-white">
           <DialogHeader>
@@ -788,7 +899,7 @@ export default function FileExplorer({
         </DialogContent>
       </Dialog>
 
-      {/* Dialog para importar repositorio */}
+      {/* Import repository dialog */}
       <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
         <DialogContent className="sm:max-w-[500px] bg-slate-900 text-white">
           <DialogHeader>
