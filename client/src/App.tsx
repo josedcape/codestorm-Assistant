@@ -6,8 +6,10 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import { useEffect } from "react";
 import { motion } from "framer-motion";
-import { AppProvider, useAppContext } from "./context/AppContext"; // Added useAppContext import
-import CodeCorrectionModal from './components/CodeCorrectionModal'; // Added import
+import { AppProvider, useAppContext } from "./context/AppContext";
+import CodeCorrectionModal from './components/CodeCorrectionModal';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import ProjectPlanner from '@/components/ProjectPlanner';
 
 function Router() {
   return (
@@ -19,7 +21,7 @@ function Router() {
 }
 
 const AppWithProviders = () => {
-  const { isCodeCorrectionModalOpen, selectedFileForCorrection, closeCodeCorrectionModal, applyCodeCorrection } = useAppContext();
+  const { selectedModel, setSelectedModel, showProjectPlanner, setShowProjectPlanner, isCodeCorrectionModalOpen, selectedFileForCorrection, closeCodeCorrectionModal, applyCodeCorrection } = useAppContext();
 
   return (
     <motion.div 
@@ -30,6 +32,15 @@ const AppWithProviders = () => {
     >
       <Router />
       <Toaster />
+
+      {/* Diálogo del Planificador de Proyectos */}
+      <Dialog open={showProjectPlanner} onOpenChange={setShowProjectPlanner}>
+        <DialogContent className="max-w-4xl h-[80vh] p-0">
+          <div className="p-6 h-full overflow-y-auto">
+            <ProjectPlanner onComplete={() => setShowProjectPlanner(false)} />
+          </div>
+        </DialogContent>
+      </Dialog>
       {/* Modal de corrección de código */}
       <CodeCorrectionModal 
         isOpen={isCodeCorrectionModalOpen}

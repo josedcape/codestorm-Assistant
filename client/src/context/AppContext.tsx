@@ -67,6 +67,10 @@ interface AppContextType {
   terminalLines: TerminalLine[];
   addTerminalLine: (line: TerminalLine) => void;
   clearTerminal: () => void;
+  executeCommand: (command: string, workingDirectory?: string) => Promise<string>;
+  showProjectPlanner: boolean;
+  setShowProjectPlanner: (show: boolean) => void;
+
 
   // Conversations management
   conversations: Conversation[];
@@ -136,12 +140,72 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [activeTab, setActiveTabState] = useState<EditorTab | null>(null);
 
   // Terminal state
-  const [terminalLines, setTerminalLines] = useState<TerminalLine[]>([
-    {
-      text: 'Terminal CODESTORM iniciada. Ingresa "help" para ver comandos disponibles.',
-      type: 'output'
+  const [terminalLines, setTerminalLines] = useState<TerminalLine[]>([]);
+  const [showProjectPlanner, setShowProjectPlanner] = useState(false);
+
+  const addTerminalLine = (line: TerminalLine) => {
+    setTerminalLines(prev => [...prev, line]);
+  };
+
+  const clearTerminal = () => {
+    setTerminalLines([
+      {
+        text: 'Terminal limpiada. Ingresa "help" para ver comandos disponibles.',
+        type: 'output'
+      }
+    ]);
+  };
+
+  const executeCommand = async (command: string, workingDirectory?: string): Promise<string> => {
+    try {
+      // Agregar comando al terminal
+      addTerminalLine({
+        text: command,
+        type: 'command'
+      });
+
+      // Enviar solicitud a la API
+      const response = await fetch('/api/terminal/execute', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          command,
+          workingDirectory
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        const errorMessage = data.error || data.output || 'Error al ejecutar el comando';
+        addTerminalLine({
+          text: errorMessage,
+          type: 'error'
+        });
+        throw new Error(errorMessage);
+      }
+
+      // Agregar salida al terminal
+      addTerminalLine({
+        text: data.output || '(No hay salida)',
+        type: data.error ? 'error' : 'output'
+      });
+
+      return data.output || '';
+    } catch (error) {
+      console.error('Error al ejecutar comando:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+
+      addTerminalLine({
+        text: errorMessage,
+        type: 'error'
+      });
+
+      throw error;
     }
-  ]);
+  };
 
   // Conversations state
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -165,20 +229,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     path: string;
     language: string;
   } | null>(null);
-
-  // Terminal functions
-  const addTerminalLine = (line: TerminalLine) => {
-    setTerminalLines(prev => [...prev, line]);
-  };
-
-  const clearTerminal = () => {
-    setTerminalLines([
-      {
-        text: 'Terminal limpiada. Ingresa "help" para ver comandos disponibles.',
-        type: 'output'
-      }
-    ]);
-  };
 
   // Editor functions
   const openFile = (fileId: string, content: string, language: string, filepath: string, filename: string) => {
@@ -485,7 +535,10 @@ class App {
         selectedFileForCorrection,
         openCodeCorrectionModal,
         closeCodeCorrectionModal,
-        applyCodeCorrection
+        applyCodeCorrection,
+        executeCommand,
+        showProjectPlanner,
+        setShowProjectPlanner
       }}
     >
       {children}

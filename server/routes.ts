@@ -210,6 +210,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // API endpoint para ejecución de comandos de terminal
   app.post("/api/terminal/execute", handleTerminalExecute);
+  
+  // API endpoint para sugerencia de estructura de proyecto
+  app.post("/api/project/suggest", async (req, res) => {
+    await handleProjectSuggestion(req, res);
+  });
+  
+  // API endpoint para creación de archivos
+  app.post("/api/project/create-files", async (req, res) => {
+    await handleFileCreation(req, res);
+  });
 
   const httpServer = createServer(app);
   return httpServer;

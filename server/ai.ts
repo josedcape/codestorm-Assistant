@@ -394,32 +394,234 @@ export async function handleAIGenerate(req: Request, res: Response) {
 // Ruta para ejecutar comandos de terminal
 export async function handleTerminalExecute(req: Request, res: Response) {
   try {
-    const { command } = req.body;
+    const { command, workingDirectory } = req.body;
 
     if (!command) {
       return res.status(400).json({ error: "Se requiere un comando" });
     }
 
-    // Implementación básica - en un entorno real deberías usar
-    // medidas de seguridad adicionales antes de ejecutar comandos
-    const { exec } = require("child_process");
+    // Sanitización básica de comandos para prevenir ejecución de comandos maliciosos
+    const forbiddenCommands = ['rm -rf /', 'rm -rf *', 'rm -rf .', 'chmod -R 777'];
+    if (forbiddenCommands.some(forbidden => command.includes(forbidden))) {
+      return res.status(403).json({ 
+        error: "Comando no permitido por razones de seguridad",
+        output: "⚠️ Este comando podría causar daños al sistema y ha sido bloqueado por seguridad."
+      });
+    }
 
-    exec(command, (error: any, stdout: string, stderr: string) => {
-      if (error) {
-        return res.status(500).json({ error: error.message });
-      }
+    console.log(`Ejecutando comando: ${command}`);
+    
+    // Implementación con spawn para mejor manejo de outputs grandes y en tiempo real
+    const { spawn } = require("child_process");
+    const options: any = {};
+    
+    // Usar directorio de trabajo personalizado si se proporciona
+    if (workingDirectory) {
+      options.cwd = workingDirectory;
+    }
 
-      if (stderr) {
-        return res.json({ output: stderr });
-      }
+    // Dividir el comando en partes para spawn
+    const parts = command.split(' ');
+    const cmd = parts[0];
+    const args = parts.slice(1);
+    
+    const process = spawn(cmd, args, options);
+    
+    let output = '';
+    let errorOutput = '';
 
-      res.json({ output: stdout });
+    // Capturar salida en tiempo real
+    process.stdout.on('data', (data: Buffer) => {
+      const chunk = data.toString();
+      output += chunk;
     });
+
+    process.stderr.on('data', (data: Buffer) => {
+      const chunk = data.toString();
+      errorOutput += chunk;
+    });
+
+    // Manejar finalización del proceso
+    process.on('close', (code: number) => {
+      if (code !== 0) {
+        console.log(`Comando terminado con código: ${code}`);
+        return res.json({ 
+          output: errorOutput || output,
+          error: code !== 0,
+          exitCode: code
+        });
+      }
+
+// Función para sugerir archivos y estructura de proyecto
+export async function handleProjectSuggestion(req: Request, res: Response) {
+  try {
+    const { projectType, description, techStack } = req.body;
+
+    if (!projectType) {
+      return res.status(400).json({ error: "Se requiere el tipo de proyecto" });
+    }
+
+    console.log(`Generando sugerencia para proyecto: ${projectType}`);
+    console.log(`Descripción: ${description || 'No proporcionada'}`);
+    console.log(`Stack tecnológico: ${techStack?.join(', ') || 'No especificado'}`);
+
+    // Utilizar el modelo de IA para generar la estructura del proyecto
+    const prompt = `
+Actúa como un arquitecto de software y planificador de proyectos. 
+Necesito crear un proyecto de tipo "${projectType}" con las siguientes características:
+${description ? `Descripción: ${description}` : ''}
+${techStack?.length ? `Stack tecnológico: ${techStack.join(', ')}` : ''}
+
+Proporciona una estructura de archivos recomendada para este proyecto.
+Para cada archivo sugerido, incluye:
+1. Nombre del archivo
+2. Ruta completa
+3. Lenguaje de programación
+4. Descripción breve de su propósito
+5. Contenido base recomendado (código inicial)
+
+Devuelve la respuesta como un objeto JSON con el siguiente formato:
+{
+  "projectStructure": {
+    "name": "Nombre del proyecto",
+    "description": "Descripción general",
+    "checklist": [
+      { "id": "unique-id", "title": "Paso 1", "description": "Descripción del paso", "completed": false },
+      ...
+    ],
+    "files": [
+      {
+        "id": "unique-id",
+        "name": "nombre-archivo.ext",
+        "path": "/ruta/completa/nombre-archivo.ext",
+        "language": "lenguaje",
+        "description": "Propósito del archivo",
+        "content": "Contenido base del archivo",
+        "isDirectory": false
+      },
+      ...
+    ]
+  }
+}
+`;
+
+    const response = await generateOpenAIResponse(prompt);
+    
+    // Intentar parsear la respuesta como JSON
+    try {
+      // Buscar el primer objeto JSON válido en la respuesta
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error("No se encontró una estructura JSON válida en la respuesta");
+      }
+      
+      const projectData = JSON.parse(jsonMatch[0]);
+      
+      // Validar la estructura
+      if (!projectData.projectStructure || !Array.isArray(projectData.projectStructure.files)) {
+        throw new Error("La estructura JSON no tiene el formato esperado");
+      }
+      
+      res.json(projectData);
+    } catch (jsonError) {
+      console.error("Error al parsear la respuesta JSON:", jsonError);
+      res.status(500).json({ 
+        error: "No se pudo generar una estructura de proyecto válida",
+        rawResponse: response
+      });
+    }
+  } catch (error: any) {
+    console.error("Error al generar sugerencia de proyecto:", error);
+    res.status(500).json({ 
+      error: error.message || "Error interno del servidor" 
+    });
+  }
+}
+
+// Función para crear archivos en el proyecto
+export async function handleFileCreation(req: Request, res: Response) {
+  try {
+    const { files } = req.body;
+
+    if (!files || !Array.isArray(files) || files.length === 0) {
+      return res.status(400).json({ error: "Se requiere al menos un archivo" });
+    }
+
+    const fs = require('fs');
+    const path = require('path');
+    const results = [];
+
+    for (const file of files) {
+      try {
+        // Validar datos del archivo
+        if (!file.path || !file.content) {
+          results.push({
+            path: file.path || 'desconocido',
+            success: false,
+            error: "Ruta o contenido no proporcionado"
+          });
+          continue;
+        }
+
+        // Asegurar que el directorio exista
+        const dirname = path.dirname(file.path);
+        if (!fs.existsSync(dirname)) {
+          fs.mkdirSync(dirname, { recursive: true });
+        }
+
+        // Escribir el archivo
+        fs.writeFileSync(file.path, file.content);
+        
+        results.push({
+          path: file.path,
+          success: true
+        });
+        
+        console.log(`Archivo creado: ${file.path}`);
+      } catch (fileError: any) {
+        console.error(`Error al crear archivo ${file.path}:`, fileError);
+        results.push({
+          path: file.path || 'desconocido',
+          success: false,
+          error: fileError.message
+        });
+      }
+    }
+
+    res.json({ results });
+  } catch (error: any) {
+    console.error("Error al crear archivos:", error);
+    res.status(500).json({ 
+      error: error.message || "Error interno del servidor" 
+    });
+  }
+}
+
+      
+      res.json({ 
+        output: output,
+        error: false,
+        exitCode: code
+      });
+    });
+
+    // Manejar errores de ejecución
+    process.on('error', (err: Error) => {
+      console.error(`Error al ejecutar comando: ${err.message}`);
+      res.status(500).json({ 
+        error: true, 
+        output: `Error al ejecutar el comando: ${err.message}`
+      });
+    });
+    
   } catch (error: any) {
     console.error("Error al ejecutar comando:", error);
     res
       .status(500)
-      .json({ error: error.message || "Error interno del servidor" });
+      .json({ 
+        error: true,
+        output: error.message || "Error interno del servidor" 
+      });
   }
 }
 

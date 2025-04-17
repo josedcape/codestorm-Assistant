@@ -11,7 +11,8 @@ import {
   Code,
   Terminal,
   Braces,
-  ExternalLink
+  ExternalLink,
+  PackageIcon
 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { motion } from 'framer-motion';
@@ -37,7 +38,8 @@ const Header: React.FC<HeaderProps> = ({
     showFileExplorer, 
     showAIAssistant, 
     setShowFileExplorer, 
-    setShowAIAssistant 
+    setShowAIAssistant,
+    setShowProjectPlanner
   } = useAppContext();
 
   const isMobile = useIsMobile();
@@ -148,6 +150,13 @@ const Header: React.FC<HeaderProps> = ({
                 {!isMobile && <span>Terminal</span>}
               </Button>
             )}
+            <Button 
+              variant="ghost" 
+              title="Planificador de Proyectos" 
+              onClick={() => setShowProjectPlanner(true)}
+            >
+              <PackageIcon size={20} />
+            </Button>
           </div>
         )}
 
