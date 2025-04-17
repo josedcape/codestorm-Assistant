@@ -276,7 +276,7 @@ export async function handleAIGenerate(req: Request, res: Response) {
       // Si el modelo solicitado no está disponible, usar un modelo alternativo
       let modelToUse = model;
       if (!availableModels.includes(model) && availableModels.length > 0) {
-        const modelo_alternativo = modelos_disponibles[0];
+        const modelo_alternativo = availableModels[0];
         console.log(`Modelo ${model} no disponible, usando alternativa: ${modelo_alternativo}`);
         warning = `El modelo ${model} no está disponible. Usando ${modelo_alternativo} como alternativa.`;
         modelToUse = modelo_alternativo;
@@ -286,6 +286,8 @@ export async function handleAIGenerate(req: Request, res: Response) {
         case "gpt-4o":
         case "gpt-4.1":
         case "o3-mini":
+        case "gpt-4":
+        case "gpt-3.5-turbo":
           if (!openaiKey) {
             return res
               .status(400)
@@ -303,6 +305,8 @@ export async function handleAIGenerate(req: Request, res: Response) {
           break;
         case "claude-3.7-sonnet":
         case "claude-3.5-sonnet-v2":
+        case "claude-3":
+        case "claude-2.1":
           if (!anthropicKey) {
             return res
               .status(400)
@@ -341,7 +345,7 @@ export async function handleAIGenerate(req: Request, res: Response) {
       console.error(`Error específico del modelo ${model}:`, modelError);
 
       // Intentar con el siguiente modelo disponible
-      for (const modelo_alternativo of modelos_disponibles) {
+      for (const modelo_alternativo of availableModels) {
         if (modelo_alternativo !== model) {
           try {
             console.log(`Intentando con ${modelo_alternativo} como alternativa...`);
