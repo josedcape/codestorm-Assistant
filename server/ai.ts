@@ -69,14 +69,14 @@ Responde siempre en español y ofrece soluciones técnicas avanzadas con ejemplo
     console.log("Enviando solicitud a OpenAI...");
 
     // Verificar que la clave API sea válida
-    if (!openaiKey || openaiKey === 'your-openai-api-key' || openaiKey.startsWith('sk-proj-')) {
-      throw new Error('La clave API de OpenAI no es válida. Por favor, configura una clave válida');
+    if (!openaiKey || openaiKey === 'your-openai-api-key') {
+      throw new Error('La clave API de OpenAI no está configurada. Por favor, configura una clave válida');
     }
 
     const response = await axios.post(
       "https://api.openai.com/v1/chat/completions",
       {
-        model: "gpt-4o",  // Actualizado a gpt-4o
+        model: "gpt-4",  // Corregido el nombre del modelo
         messages,
         temperature: 0.7,
         max_tokens: 1000,
@@ -264,18 +264,18 @@ export async function handleAIGenerate(req: Request, res: Response) {
     let warning = null;
 
     try {
-      // Comprobar disponibilidad de modelos (actualizado con los nombres correctos)
-      const modelos_disponibles = [];
-      if (openaiKey) modelos_disponibles.push("gpt-4o", "gpt-4.1", "o3-mini");
-      if (geminiKey) modelos_disponibles.push("gemini-2.5-pro");
-      if (anthropicKey) modelos_disponibles.push("claude-3.7-sonnet", "claude-3.5-sonnet-v2");
+      // Definir y comprobar disponibilidad de modelos
+      const availableModels = [];
+      if (openaiKey) availableModels.push("gpt-4", "gpt-3.5-turbo");
+      if (geminiKey) availableModels.push("gemini-2.5-pro");
+      if (anthropicKey) availableModels.push("claude-3", "claude-2.1");
 
-      console.log("Modelos disponibles:", modelos_disponibles);
+      console.log("Modelos disponibles:", availableModels);
       console.log("Modelo solicitado:", model);
 
       // Si el modelo solicitado no está disponible, usar un modelo alternativo
       let modelToUse = model;
-      if (!modelos_disponibles.includes(model) && modelos_disponibles.length > 0) {
+      if (!availableModels.includes(model) && availableModels.length > 0) {
         const modelo_alternativo = modelos_disponibles[0];
         console.log(`Modelo ${model} no disponible, usando alternativa: ${modelo_alternativo}`);
         warning = `El modelo ${model} no está disponible. Usando ${modelo_alternativo} como alternativa.`;
