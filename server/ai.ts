@@ -239,53 +239,6 @@ async function generateClaudeResponse(
 // Ruta para manejar la generación de respuestas
 export async function handleAIGenerate(req: Request, res: Response) {
   try {
-<<<<<<< HEAD
-    let { model, prompt, code, agentType } = req.body;
-    let response;
-    let warning = null;
-
-    console.log(`Generando respuesta con modelo ${model} y agente ${agentType}. Prompt: ${prompt.substring(0, 50)}...`);
-
-    // Verificar APIs disponibles
-    const openaiKey = process.env.OPENAI_API_KEY;
-    const anthropicKey = process.env.ANTHROPIC_API_KEY;
-    const geminiKey = process.env.GEMINI_API_KEY;
-
-    console.log("API Keys disponibles:");
-    console.log(`OpenAI: ${openaiKey ? 'Configurada' : 'No configurada'}`);
-    console.log(`Anthropic: ${anthropicKey ? 'Configurada' : 'No configurada'}`);
-    console.log(`Gemini: ${geminiKey ? 'Configurada' : 'No configurada'}`);
-
-    const modelos_disponibles = [];
-    if (openaiKey) modelos_disponibles.push('gpt-4o');
-    if (geminiKey) modelos_disponibles.push('gemini-2.5');
-    if (anthropicKey) {
-      modelos_disponibles.push('claude-3-7');
-      modelos_disponibles.push('claude-3-5-sonnet-v2');
-    }
-
-    console.log("Modelos disponibles:", modelos_disponibles);
-    console.log("Modelo solicitado:", model);
-
-    // Si el modelo solicitado no está disponible, usar el primer modelo disponible
-    if (!modelos_disponibles.includes(model)) {
-      const modelo_alternativo = modelos_disponibles[0];
-      warning = `El modelo ${model} no está disponible. Usando ${modelo_alternativo} como alternativa.`;
-      console.log(warning);
-      model = modelo_alternativo;
-    }
-
-    try {
-      switch (model) {
-        case "gpt-4o":
-          if (!openaiKey) throw new Error("API key de OpenAI no configurada");
-          console.log("Enviando solicitud a OpenAI...");
-          response = await generateOpenAIResponse(prompt, code, agentType);
-          break;
-        case "gemini-2.5":
-          if (!geminiKey) throw new Error("API key de Gemini no configurada");
-          console.log("Enviando solicitud a Gemini...");
-=======
     const { model, prompt, code, agentType } = req.body;
 
     if (!prompt) {
@@ -308,6 +261,7 @@ export async function handleAIGenerate(req: Request, res: Response) {
     console.log("Gemini:", geminiKey ? "Configurada" : "No configurada");
     
     let response: string;
+    let warning = null;
 
     try {
       // Comprobar disponibilidad de modelos
@@ -320,13 +274,15 @@ export async function handleAIGenerate(req: Request, res: Response) {
       console.log("Modelo solicitado:", model);
       
       // Si el modelo solicitado no está disponible, usar un modelo alternativo
+      let modelToUse = model;
       if (!modelos_disponibles.includes(model) && modelos_disponibles.length > 0) {
         const modelo_alternativo = modelos_disponibles[0];
         console.log(`Modelo ${model} no disponible, usando alternativa: ${modelo_alternativo}`);
-        model = modelo_alternativo;
+        warning = `El modelo ${model} no está disponible. Usando ${modelo_alternativo} como alternativa.`;
+        modelToUse = modelo_alternativo;
       }
       
-      switch (model) {
+      switch (modelToUse) {
         case "gpt-4o":
           if (!openaiKey) {
             return res
@@ -341,67 +297,17 @@ export async function handleAIGenerate(req: Request, res: Response) {
               .status(400)
               .json({ error: "API key de Gemini no configurada. Por favor, configura la clave en la sección de API Keys." });
           }
->>>>>>> 978d6ec3b39552984615492ea4f9e4b2e102b17d
           response = await generateGeminiResponse(prompt, code);
           break;
         case "claude-3-7":
         case "claude-3-5-sonnet-v2":
-<<<<<<< HEAD
-          if (!anthropicKey) throw new Error("API key de Anthropic no configurada");
-          console.log("Enviando solicitud a Anthropic...");
-          response = await generateClaudeResponse(prompt, code, model);
-          break;
-        default:
-          throw new Error(`Modelo ${model} no soportado`);
-      }
-
-      return res.json({ response, warning });
-    } catch (error: any) {
-      console.error(`Error específico del modelo ${model}:`, error);
-      
-      // Intentar con el siguiente modelo disponible
-      for (const modelo_alternativo of modelos_disponibles) {
-        if (modelo_alternativo !== model) {
-          try {
-            console.log(`Intentando con ${modelo_alternativo} como alternativa...`);
-            warning = `El modelo ${model} falló. Usando ${modelo_alternativo} como alternativa.`;
-            
-            switch (modelo_alternativo) {
-              case "gpt-4o":
-                response = await generateOpenAIResponse(prompt, code, agentType);
-                break;
-              case "gemini-2.5":
-                response = await generateGeminiResponse(prompt, code);
-                break;
-              case "claude-3-7":
-              case "claude-3-5-sonnet-v2":
-                response = await generateClaudeResponse(prompt, code, modelo_alternativo);
-                break;
-            }
-            
-            return res.json({ response, warning });
-          } catch (fallbackError) {
-            console.error(`El fallback a ${modelo_alternativo} también falló:`, fallbackError);
-          }
-        }
-      }
-      
-      // Si llegamos aquí, ningún modelo funcionó
-      throw new Error(`Todos los modelos disponibles fallaron. Error original: ${error.message}`);
-    }
-  } catch (error: any) {
-    console.error("Error al generar respuesta de IA:", error);
-    res.status(500).json({
-      error: `⚠️ **Error**: ${error.message}`,
-    });
-=======
           if (!anthropicKey) {
             return res
               .status(400)
               .json({ error: "API key de Anthropic no configurada. Por favor, configura la clave en la sección de API Keys." });
           }
           const claudeModel =
-            model === "claude-3-7"
+            modelToUse === "claude-3-7"
               ? "claude-3-opus-20240229"
               : "claude-3-sonnet-20240229";
           response = await generateClaudeResponse(prompt, code, claudeModel);
@@ -430,27 +336,44 @@ export async function handleAIGenerate(req: Request, res: Response) {
           }
       }
 
-      console.log(`Respuesta generada exitosamente con modelo ${model}`);
-      res.json({ response });
+      console.log(`Respuesta generada exitosamente con modelo ${modelToUse}`);
+      return res.json({ response, warning });
     } catch (modelError: any) {
       console.error(`Error específico del modelo ${model}:`, modelError);
-
-      // Intentar con otro modelo si el principal falla
-      if (model !== "gpt-4o" && process.env.OPENAI_API_KEY) {
-        console.log("Intentando con GPT-4o como fallback...");
-        try {
-          response = await generateOpenAIResponse(prompt, code);
-          return res.json({
-            response,
-            warning: `El modelo ${model} falló, usando GPT-4o como alternativa.`,
-          });
-        } catch (fallbackError) {
-          console.error("El fallback a GPT-4o también falló:", fallbackError);
+      
+      // Intentar con el siguiente modelo disponible
+      for (const modelo_alternativo of modelos_disponibles) {
+        if (modelo_alternativo !== model) {
+          try {
+            console.log(`Intentando con ${modelo_alternativo} como alternativa...`);
+            warning = `El modelo ${model} falló. Usando ${modelo_alternativo} como alternativa.`;
+            
+            switch (modelo_alternativo) {
+              case "gpt-4o":
+                response = await generateOpenAIResponse(prompt, code, agentType);
+                break;
+              case "gemini-2.5":
+                response = await generateGeminiResponse(prompt, code);
+                break;
+              case "claude-3-7":
+              case "claude-3-5-sonnet-v2":
+                const claudeModel = 
+                  modelo_alternativo === "claude-3-7"
+                    ? "claude-3-opus-20240229"
+                    : "claude-3-sonnet-20240229";
+                response = await generateClaudeResponse(prompt, code, claudeModel);
+                break;
+            }
+            
+            return res.json({ response, warning });
+          } catch (fallbackError) {
+            console.error(`El fallback a ${modelo_alternativo} también falló:`, fallbackError);
+          }
         }
       }
-
-      // Si llegamos aquí, tanto el modelo original como el fallback fallaron
-      throw modelError;
+      
+      // Si llegamos aquí, ningún modelo funcionó
+      throw new Error(`Todos los modelos disponibles fallaron. Error original: ${modelError.message}`);
     }
   } catch (error: any) {
     console.error("Error al generar respuesta de IA:", error);
@@ -464,7 +387,6 @@ export async function handleAIGenerate(req: Request, res: Response) {
     }
 
     res.status(500).json({ error: errorMessage });
->>>>>>> 978d6ec3b39552984615492ea4f9e4b2e102b17d
   }
 }
 
@@ -649,11 +571,4 @@ function extractExplanation(response: string): string | undefined {
   }
 
   return undefined;
-<<<<<<< HEAD
 }
-
-
-
-=======
-}
->>>>>>> 978d6ec3b39552984615492ea4f9e4b2e102b17d
