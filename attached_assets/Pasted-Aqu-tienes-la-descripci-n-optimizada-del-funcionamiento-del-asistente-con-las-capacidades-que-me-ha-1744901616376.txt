@@ -1,0 +1,120 @@
+Aquí tienes la descripción optimizada del funcionamiento del asistente con las capacidades que me has solicitado, asegurando que quede bien claro cómo debe ejecutar los comandos, cómo interactúa con el usuario, y cómo maneja la planificación y creación de un proyecto. He ajustado las instrucciones para que quede aún más claro y profesional:
+
+---
+
+### **Funcionamiento del Asistente para Desarrollo de Proyectos:**
+
+El asistente debe ser capaz de **planificar, crear y ejecutar** un proyecto de desarrollo (aplicación web, móvil o de escritorio) de manera autónoma o con confirmación, dependiendo de las opciones elegidas por el usuario. A continuación se detalla cómo el asistente debe funcionar, paso a paso, desde la planificación inicial hasta la ejecución de los comandos en la terminal, y la creación de archivos en el sistema de archivos.
+
+### **1. Planificación Inicial del Proyecto (Agente de Arquitectura)**
+
+1. **Definición del tipo de aplicación**:
+   - El asistente debe comenzar ayudando al usuario a definir el tipo de proyecto que se desea construir: **aplicación web**, **móvil** o **de escritorio**.
+   
+2. **Selección de framework y tecnologías**:
+   - Dependiendo del tipo de aplicación seleccionada, el asistente debe recomendar las tecnologías y frameworks adecuados. Ejemplo:
+     - Para una **aplicación web**: **React**, **Vue.js**, **Angular** (Frontend) y **Node.js**, **Django**, **Flask** (Backend).
+     - Para una **aplicación móvil**: **React Native**, **Flutter**.
+     - Para una **aplicación de escritorio**: **Electron**.
+   - El asistente debe también sugerir otras herramientas como bases de datos, librerías necesarias, y configuraciones iniciales para cada tipo de proyecto.
+
+3. **Planificación detallada**:
+   - El **Agente de Arquitectura** debe crear un plan inicial para el proyecto, que incluye:
+     - La estructura de directorios y archivos.
+     - Los archivos principales que deben ser creados, como `index.html`, `index.js`, archivos de configuración, etc.
+     - Las dependencias necesarias y cómo se instalarán.
+   - El plan debe quedar claro, asegurando que el asistente sepa exactamente qué pasos seguir una vez el proyecto esté listo para comenzar.
+
+---
+
+### **2. Ejecución Automática o con Confirmación**
+
+Una vez que el plan esté definido, el asistente procederá a ejecutar los comandos en la terminal, siguiendo el plan establecido. Aquí se encuentra la opción clave: **Modo Automático vs. Modo con Confirmación**.
+
+#### **Modo Automático**:
+   - Si el usuario selecciona el **modo automático**, el asistente ejecutará los comandos sin pedir confirmación, de manera autónoma. Esto incluirá la creación de carpetas, archivos y la instalación de dependencias sin interrupciones.
+   - El asistente actuará de manera continua, avanzando por cada paso sin necesidad de que el usuario apruebe cada acción.
+
+#### **Modo con Confirmación**:
+   - Si el usuario selecciona el **modo con confirmación**, el asistente preguntará antes de ejecutar cada comando, permitiendo que el usuario apruebe o rechace la acción. Ejemplo:
+     - "¿Deseas que cree la carpeta raíz del proyecto ahora? [Sí/No]"
+     - "¿Deseas instalar las dependencias ahora? [Sí/No]"
+
+---
+
+### **3. Proceso de Ejecución del Proyecto**
+
+El asistente, según las elecciones del usuario, comenzará a crear la estructura del proyecto y ejecutar los comandos correspondientes en la terminal.
+
+1. **Creación de la carpeta raíz**:
+   - Primero, el asistente creará la carpeta principal para el proyecto:
+     ```bash
+     mkdir nombre-del-proyecto
+     cd nombre-del-proyecto
+     ```
+   - Este comando será ejecutado automáticamente o con la confirmación del usuario, y la carpeta será visible en el explorador de archivos.
+
+2. **Creación de los archivos iniciales**:
+   - Luego, el asistente creará el primer archivo básico, por ejemplo, `index.html` o `index.js`:
+     ```bash
+     touch index.html
+     ```
+   - El archivo será creado y aparecerá en el explorador de archivos.
+
+3. **Creación de archivos adicionales de configuración**:
+   - El asistente creará archivos de configuración como `webpack.config.js`, `babel.config.js`, `package.json`, dependiendo de las necesidades del proyecto:
+     ```bash
+     touch webpack.config.js
+     touch babel.config.js
+     touch package.json
+     ```
+
+4. **Instalación de dependencias**:
+   - El asistente procederá a instalar las dependencias necesarias según el plan inicial. Ejemplo:
+     ```bash
+     npm install react axios redux
+     ```
+   - Las dependencias serán instaladas y se reflejarán en la estructura de carpetas, y el asistente avanzará sin interrupciones o con la confirmación del usuario.
+
+5. **Confirmación de cada paso** (si el modo es manual):
+   - Después de cada comando, el asistente preguntará al usuario si desea continuar con el siguiente paso. Ejemplo:
+     - "¿Deseas crear el archivo de configuración de Webpack ahora? [Sí/No]"
+     - "¿Deseas instalar las dependencias ahora? [Sí/No]"
+
+---
+
+### **4. Retroalimentación y Visualización del Progreso**
+
+A medida que el asistente ejecuta los comandos, el **explorador de archivos** debe actualizarse para reflejar los cambios: carpetas creadas, archivos generados, dependencias instaladas, etc. Además, el asistente proporcionará retroalimentación visual dentro de la interfaz para que el usuario pueda ver claramente en qué etapa del proceso se encuentra.
+
+- **Interactividad visual**: El asistente puede mostrar en tiempo real una vista previa de los cambios y un indicador de progreso cuando esté ejecutando tareas largas como la instalación de dependencias.
+
+---
+
+### **5. Opciones de Personalización de Ejecución**
+
+El asistente debe ofrecer flexibilidad total en términos de control sobre el proceso de desarrollo:
+
+- **Modo autónomo**: El asistente actuará completamente de manera autónoma, ejecutando comandos y construyendo el proyecto sin intervención del usuario.
+- **Modo con confirmación**: El asistente pedirá confirmación antes de cada paso, brindando al usuario total control sobre el flujo de trabajo.
+- **Opción de pausar y reanudar**: El asistente debe permitir pausar el proceso de ejecución y reanudarlo más tarde, idealmente permitiendo guardar el progreso en cualquier momento.
+
+---
+
+### **Instrucción Final para el Asistente:**
+
+1. **Planificación del proyecto**: El asistente debe crear un plan detallado que incluya las tecnologías, estructuras de archivos y dependencias necesarias.
+2. **Confirmación del usuario**: El asistente debe preguntar al usuario si desea continuar con la ejecución de cada comando, ya sea en modo automático o con confirmación.
+3. **Ejecución de comandos en la terminal**: El asistente ejecutará los comandos para crear la estructura de carpetas, archivos, e instalar dependencias, según el plan.
+4. **Actualización en el explorador de archivos**: Cada cambio realizado debe reflejarse automáticamente en el explorador de archivos.
+5. **Retroalimentación visual**: El asistente debe dar retroalimentación continua sobre el progreso del proyecto, indicando el estado actual de la creación y ejecución del código.
+
+---
+
+### **Resumen de Funcionamiento**:
+
+El asistente es un **toolkit automatizado** para la creación de proyectos de software, capaz de ejecutar comandos de manera eficiente y controlar todo el ciclo de vida del desarrollo desde la planificación inicial hasta la ejecución final. Permite al usuario **elegir entre un modo autónomo o manual**, según prefiera tener control total sobre el proceso o delegar la ejecución automática. Además, se asegura de que todo el trabajo se refleje en el explorador de archivos de manera clara y organizada.
+
+---
+
+Este flujo detallado asegura que el asistente cumpla con la tarea de crear un proyecto de software de manera eficiente, adaptándose a las necesidades del usuario y brindándole total flexibilidad en el proceso de desarrollo.
