@@ -12,11 +12,9 @@ const requiredKeys = ['OPENAI_API_KEY', 'GEMINI_API_KEY', 'ANTHROPIC_API_KEY'];
 for (const key of requiredKeys) {
   if (!process.env[key]) {
     console.warn(`⚠️ Warning: ${key} is not set in .env file`);
-<<<<<<< HEAD
+
   } else {
     console.log(`✅ ${key} is configured`);
-=======
->>>>>>> 978d6ec3b39552984615492ea4f9e4b2e102b17d
   }
 }
 
@@ -86,7 +84,4 @@ app.use((req, res, next) => {
     log(`serving on port ${port}`);
   });
 })();
-<<<<<<< HEAD
 
-=======
->>>>>>> 978d6ec3b39552984615492ea4f9e4b2e102b17d
