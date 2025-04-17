@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,8 +9,10 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { motion } from 'framer-motion';
-import { CheckSquare, Code, Database, FileText, FolderPlus, PlusCircle, Server, Smartphone, Terminal, ChevronRight, Check } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { motion, AnimatePresence } from 'framer-motion';
+import { CheckSquare, Code, Database, FileText, FolderPlus, PlusCircle, Server, Smartphone, Terminal, ChevronRight, Check, AlertTriangle, Loader, Archive, FolderTree, FileCode } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface ChecklistItem {
   id: string;
@@ -39,11 +41,28 @@ interface ProjectTemplate {
   files: FileTemplate[];
   dependencies: string[];
   setupCommands: string[];
+  architecture?: string;
+  features?: string[];
+}
+
+interface CommandExecution {
+  command: string;
+  status: 'pending' | 'running' | 'completed' | 'error';
+  output: string;
+  error?: string;
+}
+
+interface ProjectStructure {
+  rootFolder: string;
+  files: FileTemplate[];
+  mainFiles: string[];
+  configFiles: string[];
 }
 
 const ProjectPlanner: React.FC = () => {
   const { setShowProjectPlanner, currentAgent, developmentMode, executeCommand, createFile } = useAppContext();
   
+  const scrollRef = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState<number>(1);
   const [projectType, setProjectType] = useState<'web' | 'mobile' | 'desktop'>('web');
   const [projectName, setProjectName] = useState<string>('mi-proyecto');
@@ -58,6 +77,10 @@ const ProjectPlanner: React.FC = () => {
   const [isExecutingCommand, setIsExecutingCommand] = useState<boolean>(false);
   const [commandOutput, setCommandOutput] = useState<string>('');
   const [setupCommands, setSetupCommands] = useState<string[]>([]);
+  const [executionMode, setExecutionMode] = useState<'auto' | 'confirm'>('confirm');
+  const [projectStructure, setProjectStructure] = useState<ProjectStructure | null>(null);
+  const [commandHistory, setCommandHistory] = useState<CommandExecution[]>([]);
+  const [showSuccessMessage, setShowSuccessMessage] = useState<boolean>(false);
   
   // Frameworks disponibles según el tipo de proyecto
   const frameworks = {
@@ -190,11 +213,32 @@ const ProjectPlanner: React.FC = () => {
     setIsExecutingCommand(true);
     setCurrentTaskIndex(index);
     
+    // Actualizar el historial de comandos con el nuevo comando a ejecutar
+    setCommandHistory(prev => [...prev, {
+      command,
+      status: 'running',
+      output: 'Ejecutando comando...'
+    }]);
+    
     try {
-      // En modo autónomo ejecutamos directamente
-      if (developmentMode === 'autonomous') {
+      // En modo automático ejecutamos directamente
+      if (executionMode === 'auto') {
+        setCommandOutput(`Ejecutando: ${command}`);
+        
         const output = await executeCommand(command);
         setCommandOutput(output);
+        
+        // Actualizar el historial de comandos
+        setCommandHistory(prev => {
+          const updated = [...prev];
+          const lastIndex = updated.length - 1;
+          updated[lastIndex] = {
+            ...updated[lastIndex],
+            status: 'completed',
+            output
+          };
+          return updated;
+        });
         
         // Actualizar checklist
         const updatedChecklist = [...checklist];
@@ -203,27 +247,167 @@ const ProjectPlanner: React.FC = () => {
         }
         setChecklist(updatedChecklist);
         
+        // Verificar si se están creando archivos o carpetas y actualizarlos en el explorador
+        if (command.includes('mkdir') || command.includes('touch') || command.includes('create-react-app')) {
+          // Simular actualización del explorador de archivos
+          updateProjectStructure(command);
+        }
+        
+        // Desplazar al final del scroll automáticamente
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+        
         // Avanzar al siguiente comando si existe
         if (index < setupCommands.length - 1) {
           setTimeout(() => {
             executeSetupCommand(setupCommands[index + 1], index + 1);
-          }, 1000);
+          }, 1500);
         } else {
-          setIsCreatingProject(false);
+          finalizeProjectCreation();
         }
       } else {
-        // En modo interactivo solo mostramos el comando y esperamos confirmación
+        // En modo con confirmación solo mostramos el comando y esperamos confirmación
         setCommandOutput(`Listo para ejecutar: ${command}`);
       }
     } catch (error) {
       console.error('Error al ejecutar comando:', error);
-      setCommandOutput(`Error: ${error instanceof Error ? error.message : 'Ocurrió un error desconocido'}`);
+      const errorMessage = error instanceof Error ? error.message : 'Ocurrió un error desconocido';
+      
+      setCommandOutput(`Error: ${errorMessage}`);
+      
+      // Actualizar el historial de comandos con el error
+      setCommandHistory(prev => {
+        const updated = [...prev];
+        const lastIndex = updated.length - 1;
+        updated[lastIndex] = {
+          ...updated[lastIndex],
+          status: 'error',
+          output: `Error: ${errorMessage}`,
+          error: errorMessage
+        };
+        return updated;
+      });
+      
       setIsExecutingCommand(false);
     } finally {
-      if (developmentMode !== 'autonomous') {
+      if (executionMode !== 'auto') {
         setIsExecutingCommand(false);
       }
     }
+  };
+  
+  // Función para actualizar la visualización de la estructura del proyecto
+  const updateProjectStructure = (command: string) => {
+    // Analizar el comando para determinar qué archivos o carpetas se están creando
+    const newStructure: ProjectStructure = projectStructure ? {...projectStructure} : {
+      rootFolder: projectName,
+      files: [],
+      mainFiles: [],
+      configFiles: []
+    };
+    
+    // Detectar creación de carpetas
+    if (command.includes('mkdir')) {
+      const folderMatch = command.match(/mkdir\s+([^\s]+)/);
+      if (folderMatch && folderMatch[1]) {
+        const folderName = folderMatch[1];
+        newStructure.files.push({
+          id: `folder-${Date.now()}`,
+          name: folderName,
+          path: `/${folderName}`,
+          language: '',
+          description: 'Carpeta del proyecto',
+          content: '',
+          isDirectory: true
+        });
+      }
+    }
+    
+    // Detectar creación de archivos
+    if (command.includes('touch')) {
+      const fileMatch = command.match(/touch\s+([^\s]+)/);
+      if (fileMatch && fileMatch[1]) {
+        const fileName = fileMatch[1];
+        const isConfig = fileName.includes('config') || fileName.includes('json');
+        
+        newStructure.files.push({
+          id: `file-${Date.now()}`,
+          name: fileName,
+          path: `/${fileName}`,
+          language: fileName.endsWith('.js') ? 'javascript' : 
+                   fileName.endsWith('.html') ? 'html' : 
+                   fileName.endsWith('.css') ? 'css' : 
+                   fileName.endsWith('.json') ? 'json' : '',
+          description: `Archivo ${isConfig ? 'de configuración' : ''} del proyecto`,
+          content: '',
+          isDirectory: false
+        });
+        
+        if (isConfig) {
+          newStructure.configFiles.push(fileName);
+        } else if (fileName.includes('index')) {
+          newStructure.mainFiles.push(fileName);
+        }
+      }
+    }
+    
+    // Detectar creación de proyectos con create-react-app u otros creadores
+    if (command.includes('create-react-app')) {
+      // Simular la estructura básica de un proyecto React
+      newStructure.files.push(
+        {
+          id: `folder-src-${Date.now()}`,
+          name: 'src',
+          path: `/src`,
+          language: '',
+          description: 'Carpeta de código fuente',
+          content: '',
+          isDirectory: true
+        },
+        {
+          id: `folder-public-${Date.now()}`,
+          name: 'public',
+          path: `/public`,
+          language: '',
+          description: 'Carpeta de archivos públicos',
+          content: '',
+          isDirectory: true
+        },
+        {
+          id: `file-package-${Date.now()}`,
+          name: 'package.json',
+          path: `/package.json`,
+          language: 'json',
+          description: 'Configuración del proyecto',
+          content: '',
+          isDirectory: false
+        },
+        {
+          id: `file-index-${Date.now()}`,
+          name: 'index.js',
+          path: `/src/index.js`,
+          language: 'javascript',
+          description: 'Punto de entrada del proyecto',
+          content: '',
+          isDirectory: false
+        }
+      );
+      
+      newStructure.mainFiles.push('index.js');
+      newStructure.configFiles.push('package.json');
+    }
+    
+    setProjectStructure(newStructure);
+  };
+  
+  // Finalizar la creación del proyecto
+  const finalizeProjectCreation = () => {
+    setIsCreatingProject(false);
+    setShowSuccessMessage(true);
+    setTimeout(() => {
+      setShowSuccessMessage(false);
+    }, 5000);
   };
 
   // Iniciar la creación del proyecto
@@ -292,7 +476,35 @@ const ProjectPlanner: React.FC = () => {
             <>
               {step === 1 && (
                 <div className="space-y-6">
-                  <h3 className="text-lg font-semibold mb-4">Información Básica del Proyecto</h3>
+                  <h3 className="text-lg font-semibold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-amber-300 to-yellow-600">
+                    <span className="codestorm-logo mr-2">CODESTORM</span>
+                    Plan de Desarrollo de Proyectos
+                  </h3>
+                  
+                  <div className="p-4 bg-blue-900/20 border border-blue-800 rounded-md mb-6">
+                    <h4 className="text-sm font-medium flex items-center">
+                      <AlertTriangle size={18} className="mr-2 text-amber-400" />
+                      Modo de ejecución
+                    </h4>
+                    <div className="flex items-center justify-between mt-2">
+                      <div className="text-sm text-slate-300">
+                        <div className="font-medium text-white">Selecciona cómo quieres que se ejecuten los comandos:</div>
+                        <p className="mt-1 text-sm text-slate-300">
+                          {executionMode === 'auto' 
+                            ? 'Se ejecutarán todos los comandos automáticamente sin intervención.' 
+                            : 'Se te pedirá confirmación antes de ejecutar cada comando.'}
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className={`text-xs ${executionMode === 'confirm' ? 'text-amber-400' : 'text-slate-400'}`}>Con confirmación</span>
+                        <Switch 
+                          checked={executionMode === 'auto'}
+                          onCheckedChange={(checked) => setExecutionMode(checked ? 'auto' : 'confirm')}
+                        />
+                        <span className={`text-xs ${executionMode === 'auto' ? 'text-amber-400' : 'text-slate-400'}`}>Automático</span>
+                      </div>
+                    </div>
+                  </div>
                   
                   <div className="space-y-4">
                     <div>
@@ -507,54 +719,164 @@ const ProjectPlanner: React.FC = () => {
               )}
             </>
           ) : (
-            <div className="space-y-6">
-              <h3 className="text-lg font-semibold mb-4">Creando Proyecto: {projectName}</h3>
+            <div className="space-y-6" ref={scrollRef}>
+              <h3 className="text-lg font-semibold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-amber-300 to-yellow-600">
+                <span className="codestorm-logo mr-2">CODESTORM</span>
+                Creando Proyecto: {projectName}
+              </h3>
               
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-medium">Progreso</h4>
-                  <div className="text-sm text-slate-400">
-                    Paso {currentTaskIndex + 1} de {setupCommands.length}
-                  </div>
+              <div className="flex items-center space-x-3 mb-4">
+                <div className={`h-2 flex-1 rounded-full ${executionMode === 'auto' ? 'bg-blue-900' : 'bg-amber-900'}`}>
+                  <div 
+                    className={`h-full rounded-full ${executionMode === 'auto' ? 'bg-blue-500' : 'bg-amber-500'}`} 
+                    style={{ width: `${(currentTaskIndex / setupCommands.length) * 100}%` }}
+                  ></div>
                 </div>
-
-                <div className="bg-slate-800 rounded-md p-4 mb-4">
-                  <div className="mb-2 flex justify-between">
-                    <div className="font-medium">{checklist[currentTaskIndex]?.title || 'Ejecutando comando'}</div>
-                    {isExecutingCommand && (
-                      <div className="flex items-center">
-                        <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-2"></div>
-                        <span className="text-sm text-slate-300">Ejecutando...</span>
+                <div className="text-sm text-slate-300 whitespace-nowrap">
+                  Paso {currentTaskIndex + 1} de {setupCommands.length}
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div className="md:col-span-3 space-y-4">
+                  <div className="bg-slate-800 rounded-md p-4">
+                    <div className="mb-2 flex justify-between items-center">
+                      <div className="font-medium flex items-center">
+                        {isExecutingCommand && (
+                          <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-2"></div>
+                        )}
+                        {checklist[currentTaskIndex]?.title || 'Ejecutando comando'}
                       </div>
-                    )}
-                  </div>
-                  <div className="text-sm text-slate-400 mb-3">{checklist[currentTaskIndex]?.description || ''}</div>
-                  
-                  <div className="bg-slate-900 rounded-md p-3 font-mono text-xs">
-                    <div className="mb-2">
-                      <span className="text-green-400">$ {setupCommands[currentTaskIndex]}</span>
+                      <div className="px-2 py-1 text-xs rounded-full bg-blue-900 text-blue-100">
+                        {executionMode === 'auto' ? 'Modo automático' : 'Modo con confirmación'}
+                      </div>
                     </div>
-                    {commandOutput && (
-                      <div className="text-slate-300 whitespace-pre-wrap max-h-40 overflow-y-auto">
-                        {commandOutput}
+                    <div className="text-sm text-slate-400 mb-3">{checklist[currentTaskIndex]?.description || ''}</div>
+                    
+                    <div className="bg-slate-900 rounded-md p-3 font-mono text-xs">
+                      <div className="mb-2">
+                        <span className="text-green-400">$ {setupCommands[currentTaskIndex]}</span>
+                      </div>
+                      {commandOutput && (
+                        <div className="text-slate-300 whitespace-pre-wrap max-h-60 overflow-y-auto p-2 border-t border-slate-700">
+                          {commandOutput}
+                        </div>
+                      )}
+                    </div>
+                    
+                    <AnimatePresence>
+                      {showSuccessMessage && (
+                        <motion.div 
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0 }}
+                          className="mt-4 p-3 bg-green-900/30 border border-green-700 rounded-md"
+                        >
+                          <div className="flex items-center">
+                            <Check className="h-5 w-5 text-green-400 mr-2" />
+                            <p className="text-green-200">¡Proyecto creado exitosamente!</p>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                  
+                  {/* Historial de comandos ejecutados */}
+                  {commandHistory.length > 0 && (
+                    <div className="bg-slate-800 rounded-md p-4">
+                      <h4 className="font-medium mb-2 flex items-center">
+                        <Terminal size={16} className="mr-2" />
+                        Historial de comandos
+                      </h4>
+                      <div className="space-y-2 max-h-60 overflow-y-auto">
+                        {commandHistory.map((cmd, idx) => (
+                          <div key={idx} className="text-xs border-b border-slate-700 pb-2 last:border-0">
+                            <div className="flex items-center justify-between mb-1">
+                              <code className="text-amber-400">$ {cmd.command}</code>
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] ${
+                                cmd.status === 'completed' ? 'bg-green-900 text-green-300' :
+                                cmd.status === 'error' ? 'bg-red-900 text-red-300' :
+                                cmd.status === 'running' ? 'bg-blue-900 text-blue-300' :
+                                'bg-slate-700 text-slate-300'
+                              }`}>
+                                {cmd.status}
+                              </span>
+                            </div>
+                            {cmd.output && (
+                              <div className="text-slate-300 whitespace-pre-wrap max-h-20 overflow-y-auto pl-2 border-l-2 border-slate-700">
+                                {cmd.output.length > 100 ? cmd.output.substring(0, 100) + '...' : cmd.output}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {executionMode === 'confirm' && (
+                    <div className="flex justify-end space-x-2">
+                      <Button variant="outline" onClick={() => setIsCreatingProject(false)}>
+                        Cancelar
+                      </Button>
+                      <Button 
+                        onClick={confirmCommandExecution} 
+                        disabled={isExecutingCommand}
+                        className="bg-amber-600 hover:bg-amber-700"
+                      >
+                        {currentTaskIndex < setupCommands.length - 1 ? 'Ejecutar y Continuar' : 'Finalizar'}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Visualización de la estructura del proyecto */}
+                <div className="md:col-span-2">
+                  <div className="bg-slate-800 rounded-md h-full p-4">
+                    <h4 className="font-medium mb-3 flex items-center">
+                      <FolderTree size={16} className="mr-2" />
+                      Estructura del Proyecto
+                    </h4>
+                    
+                    {projectStructure ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center p-2 bg-slate-700 rounded-md">
+                          <FolderOpen size={18} className="text-amber-400 mr-2" />
+                          <span className="font-medium">{projectStructure.rootFolder}</span>
+                        </div>
+                        
+                        <div className="ml-4 space-y-1">
+                          {projectStructure.files.map((file) => (
+                            <motion.div 
+                              key={file.id}
+                              initial={{ opacity: 0, x: -5 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              className="flex items-center p-1.5 hover:bg-slate-700 rounded"
+                            >
+                              {file.isDirectory ? (
+                                <FolderOpen size={16} className="text-amber-400 mr-2" />
+                              ) : (
+                                <FileCode size={16} className="text-blue-400 mr-2" />
+                              )}
+                              <span className="text-sm">{file.name}</span>
+                            </motion.div>
+                          ))}
+                          
+                          {/* Mostrar indicador si no hay archivos */}
+                          {projectStructure.files.length === 0 && (
+                            <div className="text-center py-8 text-slate-400 text-sm italic">
+                              No hay archivos creados todavía
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center h-48 text-slate-400">
+                        <Archive size={32} className="mb-2 opacity-50" />
+                        <p className="text-sm">La estructura del proyecto se mostrará aquí</p>
                       </div>
                     )}
                   </div>
                 </div>
-
-                {developmentMode === 'interactive' && (
-                  <div className="flex justify-end space-x-2">
-                    <Button variant="outline" onClick={() => setIsCreatingProject(false)}>
-                      Cancelar
-                    </Button>
-                    <Button 
-                      onClick={confirmCommandExecution} 
-                      disabled={isExecutingCommand}
-                    >
-                      {currentTaskIndex < setupCommands.length - 1 ? 'Ejecutar y Continuar' : 'Finalizar'}
-                    </Button>
-                  </div>
-                )}
               </div>
             </div>
           )}

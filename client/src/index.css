@@ -327,9 +327,15 @@ html, body {
 
   /* CODESTORM branding and style */
   .codestorm-logo {
-    @apply font-bold text-2xl text-primary;
-    text-shadow: 0 0 10px rgba(255, 204, 0, 0.3);
+    @apply font-bold text-3xl;
+    color: #FFD700;
+    background: linear-gradient(90deg, #FFD700, #FFA500);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
     letter-spacing: 1px;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
   }
 
   .codestorm-assistant-panel {
