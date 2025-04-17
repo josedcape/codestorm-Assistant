@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useToast } from '@/hooks/use-toast';
 
 interface ModelSelectorProps {
   selectedModel?: string;
@@ -35,6 +36,15 @@ export default function ModelSelector({
   const handleModelChange = (value: string) => {
     if (onModelChange) {
       onModelChange(value);
+      
+      // Mostrar notificación
+      const { toast } = useToast();
+      const modelInfo = MODEL_INFO[value as AIModel];
+      toast({
+        title: "Modelo actualizado",
+        description: `Ahora estás usando ${modelInfo?.name || value}`,
+        variant: "default",
+      });
     }
   };
 
@@ -42,6 +52,14 @@ export default function ModelSelector({
     if (onDevelopmentModeChange) {
       const newMode = developmentMode === 'interactive' ? 'autonomous' : 'interactive';
       onDevelopmentModeChange(newMode);
+      
+      // Mostrar notificación
+      const { toast } = useToast();
+      toast({
+        title: "Modo de desarrollo cambiado",
+        description: `Modo ${newMode === 'autonomous' ? 'autónomo' : 'interactivo'} activado`,
+        variant: "default",
+      });
     }
   };
 

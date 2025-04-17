@@ -24,7 +24,8 @@ import {
   Minimize2,
   List,
   MessageCircle,
-  PlusCircle
+  PlusCircle,
+  FilePlus
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -84,6 +85,7 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [newConversationTitle, setNewConversationTitle] = useState('');
+  const [files, setFiles] = useState<string[]>([]); // Add state for files
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const isMobile = useMediaQuery('(max-width: 768px)');
@@ -310,6 +312,22 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
       description: "La conversación ha sido eliminada"
     });
   };
+
+  const handleCreateFile = () => {
+    // Placeholder for creating a file and updating the file explorer.  Replace with actual file system interaction
+    const fileName = `new_file_${Date.now()}.txt`;
+    const newFileContent = message.content; // Assuming message.content holds the content to save
+
+    //Simulate adding the file
+    setFiles([...files, fileName]);
+
+    console.log(`Created file: ${fileName} with content: ${newFileContent}`);
+    toast({
+      title: "Archivo creado",
+      description: `El archivo ${fileName} se ha creado correctamente`
+    });
+  };
+
 
   // Verificar si hay mensajes en la conversación actual
   const hasMessages = currentConversation?.messages && currentConversation.messages.length > 0;
@@ -575,19 +593,33 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
                         )}
 
                         {/* Botón de copiar */}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 bg-slate-700"
-                          onClick={() => handleCopyMessage(msg.content, msg.id)}
-                          title="Copiar mensaje"
-                        >
-                          {copiedMessageId === msg.id ? (
-                            <CheckCircle size={14} className="text-green-400" />
-                          ) : (
-                            <Copy size={14} />
+                        <div className="flex">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 bg-slate-700"
+                            onClick={() => handleCopyMessage(msg.content, msg.id)}
+                            title="Copiar mensaje"
+                          >
+                            {copiedMessageId === msg.id ? (
+                              <CheckCircle size={14} className="text-green-400" />
+                            ) : (
+                              <Copy size={14} />
+                            )}
+                          </Button>
+
+                          {msg.role === 'assistant' && (
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              onClick={handleCreateFile}
+                              className="absolute top-2 right-10 opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 bg-slate-700"
+                              title="Crear archivo con este contenido"
+                            >
+                              <FilePlus size={14} />
+                            </Button>
                           )}
-                        </Button>
+                        </div>
                       </div>
                     </div>
                   ))

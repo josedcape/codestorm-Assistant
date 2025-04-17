@@ -452,150 +452,7 @@ export async function handleTerminalExecute(req: Request, res: Response) {
         });
       }
 
-// Función para sugerir archivos y estructura de proyecto
-export async function handleProjectSuggestion(req: Request, res: Response) {
-  try {
-    const { projectType, description, techStack } = req.body;
 
-    if (!projectType) {
-      return res.status(400).json({ error: "Se requiere el tipo de proyecto" });
-    }
-
-    console.log(`Generando sugerencia para proyecto: ${projectType}`);
-    console.log(`Descripción: ${description || 'No proporcionada'}`);
-    console.log(`Stack tecnológico: ${techStack?.join(', ') || 'No especificado'}`);
-
-    // Utilizar el modelo de IA para generar la estructura del proyecto
-    const prompt = `
-Actúa como un arquitecto de software y planificador de proyectos. 
-Necesito crear un proyecto de tipo "${projectType}" con las siguientes características:
-${description ? `Descripción: ${description}` : ''}
-${techStack?.length ? `Stack tecnológico: ${techStack.join(', ')}` : ''}
-
-Proporciona una estructura de archivos recomendada para este proyecto.
-Para cada archivo sugerido, incluye:
-1. Nombre del archivo
-2. Ruta completa
-3. Lenguaje de programación
-4. Descripción breve de su propósito
-5. Contenido base recomendado (código inicial)
-
-Devuelve la respuesta como un objeto JSON con el siguiente formato:
-{
-  "projectStructure": {
-    "name": "Nombre del proyecto",
-    "description": "Descripción general",
-    "checklist": [
-      { "id": "unique-id", "title": "Paso 1", "description": "Descripción del paso", "completed": false },
-      ...
-    ],
-    "files": [
-      {
-        "id": "unique-id",
-        "name": "nombre-archivo.ext",
-        "path": "/ruta/completa/nombre-archivo.ext",
-        "language": "lenguaje",
-        "description": "Propósito del archivo",
-        "content": "Contenido base del archivo",
-        "isDirectory": false
-      },
-      ...
-    ]
-  }
-}
-`;
-
-    const response = await generateOpenAIResponse(prompt);
-    
-    // Intentar parsear la respuesta como JSON
-    try {
-      // Buscar el primer objeto JSON válido en la respuesta
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new Error("No se encontró una estructura JSON válida en la respuesta");
-      }
-      
-      const projectData = JSON.parse(jsonMatch[0]);
-      
-      // Validar la estructura
-      if (!projectData.projectStructure || !Array.isArray(projectData.projectStructure.files)) {
-        throw new Error("La estructura JSON no tiene el formato esperado");
-      }
-      
-      res.json(projectData);
-    } catch (jsonError) {
-      console.error("Error al parsear la respuesta JSON:", jsonError);
-      res.status(500).json({ 
-        error: "No se pudo generar una estructura de proyecto válida",
-        rawResponse: response
-      });
-    }
-  } catch (error: any) {
-    console.error("Error al generar sugerencia de proyecto:", error);
-    res.status(500).json({ 
-      error: error.message || "Error interno del servidor" 
-    });
-  }
-}
-
-// Función para crear archivos en el proyecto
-export async function handleFileCreation(req: Request, res: Response) {
-  try {
-    const { files } = req.body;
-
-    if (!files || !Array.isArray(files) || files.length === 0) {
-      return res.status(400).json({ error: "Se requiere al menos un archivo" });
-    }
-
-    const fs = require('fs');
-    const path = require('path');
-    const results = [];
-
-    for (const file of files) {
-      try {
-        // Validar datos del archivo
-        if (!file.path || !file.content) {
-          results.push({
-            path: file.path || 'desconocido',
-            success: false,
-            error: "Ruta o contenido no proporcionado"
-          });
-          continue;
-        }
-
-        // Asegurar que el directorio exista
-        const dirname = path.dirname(file.path);
-        if (!fs.existsSync(dirname)) {
-          fs.mkdirSync(dirname, { recursive: true });
-        }
-
-        // Escribir el archivo
-        fs.writeFileSync(file.path, file.content);
-        
-        results.push({
-          path: file.path,
-          success: true
-        });
-        
-        console.log(`Archivo creado: ${file.path}`);
-      } catch (fileError: any) {
-        console.error(`Error al crear archivo ${file.path}:`, fileError);
-        results.push({
-          path: file.path || 'desconocido',
-          success: false,
-          error: fileError.message
-        });
-      }
-    }
-
-    res.json({ results });
-  } catch (error: any) {
-    console.error("Error al crear archivos:", error);
-    res.status(500).json({ 
-      error: error.message || "Error interno del servidor" 
-    });
-  }
-}
 
       
       res.json({ 
@@ -774,4 +631,148 @@ function extractExplanation(response: string): string | undefined {
   }
 
   return undefined;
+}
+// Función para sugerir archivos y estructura de proyecto
+export async function handleProjectSuggestion(req: Request, res: Response) {
+  try {
+    const { projectType, description, techStack } = req.body;
+
+    if (!projectType) {
+      return res.status(400).json({ error: "Se requiere el tipo de proyecto" });
+    }
+
+    console.log(`Generando sugerencia para proyecto: ${projectType}`);
+    console.log(`Descripción: ${description || 'No proporcionada'}`);
+    console.log(`Stack tecnológico: ${techStack?.join(', ') || 'No especificado'}`);
+
+    // Utilizar el modelo de IA para generar la estructura del proyecto
+    const prompt = `
+Actúa como un arquitecto de software y planificador de proyectos. 
+Necesito crear un proyecto de tipo "${projectType}" con las siguientes características:
+${description ? `Descripción: ${description}` : ''}
+${techStack?.length ? `Stack tecnológico: ${techStack.join(', ')}` : ''}
+
+Proporciona una estructura de archivos recomendada para este proyecto.
+Para cada archivo sugerido, incluye:
+1. Nombre del archivo
+2. Ruta completa
+3. Lenguaje de programación
+4. Descripción breve de su propósito
+5. Contenido base recomendado (código inicial)
+
+Devuelve la respuesta como un objeto JSON con el siguiente formato:
+{
+  "projectStructure": {
+    "name": "Nombre del proyecto",
+    "description": "Descripción general",
+    "checklist": [
+      { "id": "unique-id", "title": "Paso 1", "description": "Descripción del paso", "completed": false },
+      ...
+    ],
+    "files": [
+      {
+        "id": "unique-id",
+        "name": "nombre-archivo.ext",
+        "path": "/ruta/completa/nombre-archivo.ext",
+        "language": "lenguaje",
+        "description": "Propósito del archivo",
+        "content": "Contenido base del archivo",
+        "isDirectory": false
+      },
+      ...
+    ]
+  }
+}
+`;
+
+    const response = await generateOpenAIResponse(prompt);
+    
+    // Intentar parsear la respuesta como JSON
+    try {
+      // Buscar el primer objeto JSON válido en la respuesta
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error("No se encontró una estructura JSON válida en la respuesta");
+      }
+      
+      const projectData = JSON.parse(jsonMatch[0]);
+      
+      // Validar la estructura
+      if (!projectData.projectStructure || !Array.isArray(projectData.projectStructure.files)) {
+        throw new Error("La estructura JSON no tiene el formato esperado");
+      }
+      
+      res.json(projectData);
+    } catch (jsonError) {
+      console.error("Error al parsear la respuesta JSON:", jsonError);
+      res.status(500).json({ 
+        error: "No se pudo generar una estructura de proyecto válida",
+        rawResponse: response
+      });
+    }
+  } catch (error: any) {
+    console.error("Error al generar sugerencia de proyecto:", error);
+    res.status(500).json({ 
+      error: error.message || "Error interno del servidor" 
+    });
+  }
+}
+
+// Función para crear archivos en el proyecto
+export async function handleFileCreation(req: Request, res: Response) {
+  try {
+    const { files } = req.body;
+
+    if (!files || !Array.isArray(files) || files.length === 0) {
+      return res.status(400).json({ error: "Se requiere al menos un archivo" });
+    }
+
+    const fs = require('fs');
+    const path = require('path');
+    const results = [];
+
+    for (const file of files) {
+      try {
+        // Validar datos del archivo
+        if (!file.path || !file.content) {
+          results.push({
+            path: file.path || 'desconocido',
+            success: false,
+            error: "Ruta o contenido no proporcionado"
+          });
+          continue;
+        }
+
+        // Asegurar que el directorio exista
+        const dirname = path.dirname(file.path);
+        if (!fs.existsSync(dirname)) {
+          fs.mkdirSync(dirname, { recursive: true });
+        }
+
+        // Escribir el archivo
+        fs.writeFileSync(file.path, file.content);
+        
+        results.push({
+          path: file.path,
+          success: true
+        });
+        
+        console.log(`Archivo creado: ${file.path}`);
+      } catch (fileError: any) {
+        console.error(`Error al crear archivo ${file.path}:`, fileError);
+        results.push({
+          path: file.path || 'desconocido',
+          success: false,
+          error: fileError.message
+        });
+      }
+    }
+
+    res.json({ results });
+  } catch (error: any) {
+    console.error("Error al crear archivos:", error);
+    res.status(500).json({ 
+      error: error.message || "Error interno del servidor" 
+    });
+  }
 }

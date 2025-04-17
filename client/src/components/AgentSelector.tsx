@@ -3,6 +3,7 @@ import { AgentType } from '@/lib/aiService';
 import { Card, CardContent } from '@/components/ui/card';
 import { motion } from 'framer-motion';
 import { Bot, Terminal, Code, Workflow, Check } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 export interface AgentSelectorProps {
   onAgentChange: (agent: AgentType) => void;
@@ -34,6 +35,20 @@ const agentConfig = {
 };
 
 export default function AgentSelector({ onAgentChange, currentAgent }: AgentSelectorProps) {
+  const { toast } = useToast();
+  
+  const handleAgentChange = (agent: AgentType) => {
+    onAgentChange(agent);
+    
+    // Mostrar notificación
+    const agentInfo = agentConfig[agent];
+    toast({
+      title: "Agente cambiado",
+      description: `Agente de ${agentInfo.title} activado`,
+      variant: "default",
+    });
+  };
+  
   return (
     <div className="space-y-3">
       <div className="text-sm font-medium">Tipo de agente</div>
@@ -48,7 +63,7 @@ export default function AgentSelector({ onAgentChange, currentAgent }: AgentSele
             color={agent.color}
             hoverColor={agent.hoverColor}
             isSelected={currentAgent === key}
-            onClick={() => onAgentChange(key as AgentType)}
+            onClick={() => handleAgentChange(key as AgentType)}
           />
         ))}
       </div>

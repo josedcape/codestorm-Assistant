@@ -69,36 +69,34 @@ export default function FileExplorer({
 
   const { currentProject, updateFile, deleteFile, openCodeCorrectionModal } = useAppContext();
 
-  // Simular datos si no hay archivos proporcionados
-  const projectFiles = currentProject?.files || [
-    {
-      id: '1',
-      name: 'app.js',
-      path: '/src/app.js',
-      language: 'javascript',
-      content: '',
-    },
-    {
-      id: '2',
-      name: 'styles.css',
-      path: '/src/styles.css',
-      language: 'css',
-      content: '',
-    },
-    {
-      id: '3',
-      name: 'index.html',
-      path: '/public/index.html',
-      language: 'html',
-      content: '',
-    }
-  ];
+  // Usar solo los archivos actuales del proyecto
+  const projectFiles = currentProject?.files || [];
 
-  const mockFolders = [
-    { path: '/src', name: 'src', expanded: true },
-    { path: '/public', name: 'public', expanded: false },
-    { path: '/assets', name: 'assets', expanded: false },
-  ];
+  // Extraer carpetas únicas de las rutas de archivos
+  const extractFoldersFromFiles = (files: any[]) => {
+    const folderPaths = new Set<string>();
+    
+    files.forEach(file => {
+      if (file.path) {
+        const pathParts = file.path.split('/');
+        let currentPath = '';
+        
+        // Construir las rutas de carpetas
+        for (let i = 1; i < pathParts.length - 1; i++) {
+          currentPath += '/' + pathParts[i];
+          if (currentPath) folderPaths.add(currentPath);
+        }
+      }
+    });
+    
+    return Array.from(folderPaths).map(path => ({
+      path,
+      name: path.split('/').pop() || '',
+      expanded: true
+    }));
+  };
+
+  const projectFolders = extractFoldersFromFiles(projectFiles);
 
   const effectiveFiles = files.length > 0 ? files : projectFiles.map(file => ({
     path: file.path || '',
@@ -106,7 +104,7 @@ export default function FileExplorer({
     id: file.id
   }));
 
-  const effectiveFolders = folders.length > 0 ? folders : mockFolders;
+  const effectiveFolders = folders.length > 0 ? folders : projectFolders;
 
   const toggleFolder = (path: string) => {
     setExpandedFolders(prev => ({

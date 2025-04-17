@@ -278,51 +278,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       name: 'Nuevo Proyecto',
       description: 'Proyecto creado con CODESTORM',
       tech_stack: ['javascript', 'react'],
-      files: [
-        {
-          id: uuidv4(),
-          name: 'app.js',
-          path: '/src/app.js',
-          content: `// Main application file
-import { fetchData, processResults } from './utils.js';
-import { apiClient } from './api.js';
-
-class App {
-  constructor() {
-    this.data = [];
-    this.isLoading = false;
-    this.error = null;
-  }
-
-  async initialize() {
-    try {
-      this.isLoading = true;
-      const response = await fetchData('/api/resources');
-      this.data = processResults(response);
-    } catch (err) {
-      this.error = err.message;
-      console.error('Failed to initialize:', err);
-    } finally {
-      this.isLoading = false;
-    }
-  }
-}`,
-          language: 'javascript'
-        }
-      ]
+      files: [] // Iniciar sin archivos
     };
 
     setCurrentProject(newProject);
-
-    // Open the first file
-    const firstFile = newProject.files[0];
-    openFile(
-      firstFile.id,
-      firstFile.content,
-      firstFile.language,
-      firstFile.path || '',
-      firstFile.name
-    );
+    setTabs([]); // Limpiar pestañas abiertas
+    setActiveTabState(null); // No hay pestaña activa inicialmente
   };
 
   // Conversation functions
