@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { AIModel, MODEL_INFO, DevelopmentMode } from '@/lib/aiService';
 import { 
@@ -13,7 +14,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
-import { Button } from "@/components/ui/button"; // Assuming this component exists
+import { Button } from "@/components/ui/button";
 
 interface ModelSelectorProps {
   selectedModel?: string;
@@ -21,9 +22,7 @@ interface ModelSelectorProps {
   currentModel?: AIModel;
   onDevelopmentModeChange?: (mode: DevelopmentMode) => void;
   developmentMode?: DevelopmentMode;
-  autonomousMode?: boolean;
-  onAutonomousModeChange?: (enabled: boolean) => void;
-  showNoApiWarning?: boolean; // Added to control the alert
+  showNoApiWarning?: boolean;
 }
 
 export default function ModelSelector({
@@ -31,7 +30,7 @@ export default function ModelSelector({
   onModelChange,
   developmentMode = 'interactive',
   onDevelopmentModeChange,
-  showNoApiWarning = false, // Added default value
+  showNoApiWarning = false,
 }: ModelSelectorProps) {
   const handleModelChange = (value: string) => {
     if (onModelChange) {
@@ -52,16 +51,15 @@ export default function ModelSelector({
     'gemini-2.5': !!localStorage.getItem('google_api_key'),
     'claude-3-7': !!localStorage.getItem('anthropic_api_key'),
     'claude-3-5-sonnet-v2': !!localStorage.getItem('anthropic_api_key'),
-    'qwen-2.5-omni-7b': true // Este es local, siempre disponible
+    'qwen-2.5-omni-7b': true
   };
 
-  // Obtener información del modelo actual
   const currentModelInfo = MODEL_INFO[currentModel as AIModel];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 p-4 bg-slate-900 rounded-lg">
       <div>
-        <Label htmlFor="model-select" className="text-sm font-medium mb-1.5 block">
+        <Label htmlFor="model-select" className="text-sm font-medium mb-2 block text-slate-200">
           Modelo de IA
         </Label>
         <Select
@@ -73,88 +71,88 @@ export default function ModelSelector({
           </SelectTrigger>
           <SelectContent className="bg-slate-800 border-slate-700">
             <SelectGroup>
-              <SelectLabel>OpenAI</SelectLabel>
-              <SelectItem value="gpt-4o" className="text-white focus:bg-slate-700 focus:text-white">
-                <div className="flex items-center">
+              <SelectLabel className="text-slate-400">OpenAI</SelectLabel>
+              <SelectItem value="gpt-4o" className="text-white hover:bg-slate-700">
+                <div className="flex items-center justify-between w-full">
                   <span>GPT-4.0</span>
                   {!apiKeyStatus['gpt-4o'] && (
-                    <AlertCircle size={14} className="ml-2 text-amber-400" />
+                    <AlertCircle size={14} className="text-amber-400" />
                   )}
                 </div>
               </SelectItem>
             </SelectGroup>
+            
             <SelectGroup>
-              <SelectLabel>Google</SelectLabel>
-              <SelectItem value="gemini-2.5" className="text-white focus:bg-slate-700 focus:text-white">
-                <div className="flex items-center">
-                  <span>Gemini 2.5</span>
+              <SelectLabel className="text-slate-400">Google</SelectLabel>
+              <SelectItem value="gemini-2.5" className="text-white hover:bg-slate-700">
+                <div className="flex items-center justify-between w-full">
+                  <span>Gemini 2.5 Pro</span>
                   {!apiKeyStatus['gemini-2.5'] && (
-                    <AlertCircle size={14} className="ml-2 text-amber-400" />
+                    <AlertCircle size={14} className="text-amber-400" />
                   )}
                 </div>
               </SelectItem>
             </SelectGroup>
+
             <SelectGroup>
-              <SelectLabel>Anthropic</SelectLabel>
-              <SelectItem value="claude-3-7" className="text-white focus:bg-slate-700 focus:text-white">
-                <div className="flex items-center">
+              <SelectLabel className="text-slate-400">Anthropic</SelectLabel>
+              <SelectItem value="claude-3-7" className="text-white hover:bg-slate-700">
+                <div className="flex items-center justify-between w-full">
                   <span>Claude 3.7</span>
                   {!apiKeyStatus['claude-3-7'] && (
-                    <AlertCircle size={14} className="ml-2 text-amber-400" />
+                    <AlertCircle size={14} className="text-amber-400" />
                   )}
                 </div>
               </SelectItem>
-              <SelectItem value="claude-3-5-sonnet-v2" className="text-white focus:bg-slate-700 focus:text-white">
-                <div className="flex items-center">
+              <SelectItem value="claude-3-5-sonnet-v2" className="text-white hover:bg-slate-700">
+                <div className="flex items-center justify-between w-full">
                   <span>Claude 3.5 Sonnet V2</span>
                   {!apiKeyStatus['claude-3-5-sonnet-v2'] && (
-                    <AlertCircle size={14} className="ml-2 text-amber-400" />
+                    <AlertCircle size={14} className="text-amber-400" />
                   )}
                 </div>
               </SelectItem>
             </SelectGroup>
+
             <SelectGroup>
-              <SelectLabel>Modelos locales</SelectLabel>
-              <SelectItem value="qwen-2.5-omni-7b" className="text-white focus:bg-slate-700 focus:text-white">
-                Qwen 2.5 Omni 7B
+              <SelectLabel className="text-slate-400">Local</SelectLabel>
+              <SelectItem value="qwen-2.5-omni-7b" className="text-white hover:bg-slate-700">
+                <span>Qwen 2.5 Omni 7B</span>
               </SelectItem>
             </SelectGroup>
           </SelectContent>
         </Select>
 
-        <div className="text-xs text-slate-400 mt-1">
-          {MODEL_INFO[currentModel as AIModel]?.description}
-        </div>
+        {currentModelInfo && (
+          <div className="mt-2 text-xs text-slate-400">
+            {currentModelInfo.description}
+          </div>
+        )}
       </div>
 
-      {showNoApiWarning && ( // Using showNoApiWarning to conditionally render the alert
+      {showNoApiWarning && !apiKeyStatus[currentModel] && (
         <Alert variant="warning" className="bg-amber-900/30 border-amber-700">
           <AlertCircle className="h-4 w-4 text-amber-400" />
           <AlertDescription className="flex flex-col space-y-2">
             <span>No hay clave API configurada para {currentModelInfo?.name || currentModel}.</span>
-            <span>
-              Las claves API deben configurarse tanto en la configuración del navegador como
-              en las variables de entorno del servidor para funcionar correctamente.
-            </span>
-            <div className="mt-2">
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={() => {
-                  const apiSection = document.getElementById('api-keys-section');
-                  if (apiSection) apiSection.scrollIntoView({ behavior: 'smooth' });
-                }}
-              >
-                Ir a configuración de API Keys
-              </Button>
-            </div>
+            <Button 
+              size="sm" 
+              variant="outline"
+              className="mt-2 text-amber-400 border-amber-400 hover:bg-amber-400/10"
+              onClick={() => {
+                const apiSection = document.getElementById('api-keys-section');
+                if (apiSection) apiSection.scrollIntoView({ behavior: 'smooth' });
+              }}
+            >
+              Configurar API Key
+            </Button>
           </AlertDescription>
         </Alert>
       )}
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pt-2 border-t border-slate-700">
         <div>
-          <Label htmlFor="autonomous-mode" className="text-sm font-medium">
+          <Label htmlFor="autonomous-mode" className="text-sm font-medium text-slate-200">
             Modo Autónomo
           </Label>
           <p className="text-xs text-slate-400">
