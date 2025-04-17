@@ -156,13 +156,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     ]);
   };
 
-  const executeCommand = async (command: string, workingDirectory?: string): Promise<string> => {
+  const executeCommand = async (command: string, workingDirectory?: string, silent: boolean = false): Promise<string> => {
     try {
-      // Agregar comando al terminal
-      addTerminalLine({
-        text: command,
-        type: 'command'
-      });
+      // Agregar comando al terminal si no es silencioso
+      if (!silent) {
+        addTerminalLine({
+          text: command,
+          type: 'command'
+        });
+      }
 
       // Enviar solicitud a la API
       const response = await fetch('/api/terminal/execute', {
@@ -180,29 +182,76 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
       if (!response.ok) {
         const errorMessage = data.error || data.output || 'Error al ejecutar el comando';
-        addTerminalLine({
-          text: errorMessage,
-          type: 'error'
-        });
+        if (!silent) {
+          addTerminalLine({
+            text: errorMessage,
+            type: 'error'
+          });
+        }
         throw new Error(errorMessage);
       }
 
-      // Agregar salida al terminal
-      addTerminalLine({
-        text: data.output || '(No hay salida)',
-        type: data.error ? 'error' : 'output'
-      });
+      // Agregar salida al terminal si no es silencioso
+      if (!silent) {
+        addTerminalLine({
+          text: data.output || '(No hay salida)',
+          type: data.error ? 'error' : 'output'
+        });
+      }
+
+      // Actualizar explorador de archivos después de ejecutar el comando
+      await refreshFiles();
 
       return data.output || '';
     } catch (error) {
       console.error('Error al ejecutar comando:', error);
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
 
+      if (!silent) {
+        addTerminalLine({
+          text: errorMessage,
+          type: 'error'
+        });
+      }
+
+      throw error;
+    }
+  };
+
+  // Función para ejecutar una serie de comandos en secuencia
+  const executeCommandSequence = async (commands: string[], workingDirectory?: string, confirmEach: boolean = false): Promise<string[]> => {
+    const results: string[] = [];
+    
+    try {
+      for (let i = 0; i < commands.length; i++) {
+        const command = commands[i];
+        
+        // Si estamos en modo confirmación, mostramos un mensaje y esperamos confirmación
+        if (confirmEach && i > 0) {
+          addTerminalLine({
+            text: `Listo para ejecutar: ${command}`,
+            type: 'code'
+          });
+          
+          // En un escenario real, aquí se esperaría una confirmación del usuario
+          // Por ahora, simulamos una espera con una promesa
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+        
+        const output = await executeCommand(command, workingDirectory);
+        results.push(output);
+      }
+      
+      return results;
+    } catch (error) {
+      console.error('Error al ejecutar secuencia de comandos:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      
       addTerminalLine({
-        text: errorMessage,
+        text: `Error en secuencia de comandos: ${errorMessage}`,
         type: 'error'
       });
-
+      
       throw error;
     }
   };

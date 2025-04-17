@@ -98,13 +98,16 @@ export default function FileExplorer({
 
   const projectFolders = extractFoldersFromFiles(projectFiles);
 
-  const effectiveFiles = files.length > 0 ? files : projectFiles.map(file => ({
-    path: file.path || '',
-    name: file.name,
-    id: file.id
-  }));
+  // Iniciar con un espacio de trabajo vacío si no hay archivos
+  const effectiveFiles = files.length > 0 ? files : 
+    (projectFiles.length > 0 ? projectFiles.map(file => ({
+      path: file.path || '',
+      name: file.name,
+      id: file.id
+    })) : []);
 
-  const effectiveFolders = folders.length > 0 ? folders : projectFolders;
+  const effectiveFolders = folders.length > 0 ? folders : 
+    (projectFolders.length > 0 ? projectFolders : []);
 
   const toggleFolder = (path: string) => {
     setExpandedFolders(prev => ({
@@ -543,11 +546,28 @@ export default function FileExplorer({
       {/* Estructura de archivos */}
       <ScrollArea className="flex-grow overflow-y-auto p-1">
         {filteredFolders.length === 0 && filteredFiles.length === 0 ? (
-          <div className="text-center py-8 text-slate-500 text-sm">
+          <div className="text-center py-8 text-slate-500 text-sm flex flex-col items-center justify-center">
             {searchQuery ? (
               <p>No se encontraron archivos</p>
             ) : (
-              <p>No hay archivos en el proyecto</p>
+              <>
+                <FolderPlus className="h-10 w-10 mb-2 text-slate-400" />
+                <p className="mb-1">Espacio de trabajo vacío</p>
+                <p className="text-xs max-w-[200px]">Comienza creando archivos o usando el planificador de proyectos para generar una estructura inicial</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-4"
+                  onClick={() => {
+                    // Si el contexto tiene setShowProjectPlanner, usarlo aquí
+                    const appContext = document.getElementById('project-planner-button');
+                    if (appContext) (appContext as HTMLButtonElement).click();
+                  }}
+                >
+                  <PlusCircle size={14} className="mr-1" />
+                  Nuevo Proyecto
+                </Button>
+              </>
             )}
           </div>
         ) : (

@@ -13,16 +13,17 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, BrainCircuit, Robot, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from '@/hooks/use-toast';
+import { Badge } from "@/components/ui/badge";
+import { motion } from "framer-motion";
 
 interface ModelSelectorProps {
-  selectedModel?: string;
-  onModelChange?: (model: string) => void;
-  currentModel?: AIModel;
-  onDevelopmentModeChange?: (mode: DevelopmentMode) => void;
-  developmentMode?: DevelopmentMode;
+  currentModel: AIModel;
+  onModelChange: (model: AIModel) => void;
+  developmentMode: DevelopmentMode;
+  onDevelopmentModeChange: (mode: DevelopmentMode) => void;
   showNoApiWarning?: boolean;
 }
 
@@ -33,16 +34,17 @@ export default function ModelSelector({
   onDevelopmentModeChange,
   showNoApiWarning = false,
 }: ModelSelectorProps) {
+  const { toast } = useToast();
+  
   const handleModelChange = (value: string) => {
     if (onModelChange) {
-      onModelChange(value);
+      onModelChange(value as AIModel);
       
       // Mostrar notificación
-      const { toast } = useToast();
       const modelInfo = MODEL_INFO[value as AIModel];
       toast({
         title: "Modelo actualizado",
-        description: `Ahora estás usando ${modelInfo?.name || value}`,
+        description: `${modelInfo?.name || value} activado correctamente`,
         variant: "default",
       });
     }
@@ -50,11 +52,10 @@ export default function ModelSelector({
 
   const toggleDevelopmentMode = () => {
     if (onDevelopmentModeChange) {
-      const newMode = developmentMode === 'interactive' ? 'autonomous' : 'interactive';
+      const newMode: DevelopmentMode = developmentMode === 'interactive' ? 'autonomous' : 'interactive';
       onDevelopmentModeChange(newMode);
       
       // Mostrar notificación
-      const { toast } = useToast();
       toast({
         title: "Modo de desarrollo cambiado",
         description: `Modo ${newMode === 'autonomous' ? 'autónomo' : 'interactivo'} activado`,
@@ -65,17 +66,19 @@ export default function ModelSelector({
 
   // Verificar el estado de las claves API
   const apiKeyStatus: Record<string, boolean> = {
-    'gpt-4o': !!localStorage.getItem('openai_api_key'),
-    'gemini-2.5': !!localStorage.getItem('google_api_key'),
-    'claude-3-7': !!localStorage.getItem('anthropic_api_key'),
-    'claude-3-5-sonnet-v2': !!localStorage.getItem('anthropic_api_key'),
+    'gpt-4o': !!localStorage.getItem('openai_api_key') || !!process.env.OPENAI_API_KEY,
+    'gpt-4': !!localStorage.getItem('openai_api_key') || !!process.env.OPENAI_API_KEY,
+    'gpt-3.5-turbo': !!localStorage.getItem('openai_api_key') || !!process.env.OPENAI_API_KEY,
+    'gemini-2.5-pro': !!localStorage.getItem('google_api_key') || !!process.env.GEMINI_API_KEY,
+    'claude-3': !!localStorage.getItem('anthropic_api_key') || !!process.env.ANTHROPIC_API_KEY,
+    'claude-2.1': !!localStorage.getItem('anthropic_api_key') || !!process.env.ANTHROPIC_API_KEY,
     'qwen-2.5-omni-7b': true
   };
 
   const currentModelInfo = MODEL_INFO[currentModel as AIModel];
 
   return (
-    <div className="space-y-4 p-4 bg-slate-900 rounded-lg">
+    <div className="space-y-4">
       <div>
         <Label htmlFor="model-select" className="text-sm font-medium mb-2 block text-slate-200">
           Modelo de IA
@@ -92,8 +95,33 @@ export default function ModelSelector({
               <SelectLabel className="text-slate-400">OpenAI</SelectLabel>
               <SelectItem value="gpt-4o" className="text-white hover:bg-slate-700">
                 <div className="flex items-center justify-between w-full">
-                  <span>GPT-4.0</span>
+                  <span className="flex items-center">
+                    <BrainCircuit size={14} className="mr-2 text-blue-400" />
+                    GPT-4o
+                  </span>
                   {!apiKeyStatus['gpt-4o'] && (
+                    <AlertCircle size={14} className="text-amber-400" />
+                  )}
+                </div>
+              </SelectItem>
+              <SelectItem value="gpt-4" className="text-white hover:bg-slate-700">
+                <div className="flex items-center justify-between w-full">
+                  <span className="flex items-center">
+                    <BrainCircuit size={14} className="mr-2 text-blue-400" />
+                    GPT-4
+                  </span>
+                  {!apiKeyStatus['gpt-4'] && (
+                    <AlertCircle size={14} className="text-amber-400" />
+                  )}
+                </div>
+              </SelectItem>
+              <SelectItem value="gpt-3.5-turbo" className="text-white hover:bg-slate-700">
+                <div className="flex items-center justify-between w-full">
+                  <span className="flex items-center">
+                    <BrainCircuit size={14} className="mr-2 text-blue-400" />
+                    GPT-3.5 Turbo
+                  </span>
+                  {!apiKeyStatus['gpt-3.5-turbo'] && (
                     <AlertCircle size={14} className="text-amber-400" />
                   )}
                 </div>
@@ -102,10 +130,13 @@ export default function ModelSelector({
             
             <SelectGroup>
               <SelectLabel className="text-slate-400">Google</SelectLabel>
-              <SelectItem value="gemini-2.5" className="text-white hover:bg-slate-700">
+              <SelectItem value="gemini-2.5-pro" className="text-white hover:bg-slate-700">
                 <div className="flex items-center justify-between w-full">
-                  <span>Gemini 2.5 Pro</span>
-                  {!apiKeyStatus['gemini-2.5'] && (
+                  <span className="flex items-center">
+                    <Sparkles size={14} className="mr-2 text-emerald-400" />
+                    Gemini 2.5 Pro
+                  </span>
+                  {!apiKeyStatus['gemini-2.5-pro'] && (
                     <AlertCircle size={14} className="text-amber-400" />
                   )}
                 </div>
@@ -114,37 +145,47 @@ export default function ModelSelector({
 
             <SelectGroup>
               <SelectLabel className="text-slate-400">Anthropic</SelectLabel>
-              <SelectItem value="claude-3-7" className="text-white hover:bg-slate-700">
+              <SelectItem value="claude-3" className="text-white hover:bg-slate-700">
                 <div className="flex items-center justify-between w-full">
-                  <span>Claude 3.7</span>
-                  {!apiKeyStatus['claude-3-7'] && (
+                  <span className="flex items-center">
+                    <Robot size={14} className="mr-2 text-purple-400" />
+                    Claude 3
+                  </span>
+                  {!apiKeyStatus['claude-3'] && (
                     <AlertCircle size={14} className="text-amber-400" />
                   )}
                 </div>
               </SelectItem>
-              <SelectItem value="claude-3-5-sonnet-v2" className="text-white hover:bg-slate-700">
+              <SelectItem value="claude-2.1" className="text-white hover:bg-slate-700">
                 <div className="flex items-center justify-between w-full">
-                  <span>Claude 3.5 Sonnet V2</span>
-                  {!apiKeyStatus['claude-3-5-sonnet-v2'] && (
+                  <span className="flex items-center">
+                    <Robot size={14} className="mr-2 text-purple-400" />
+                    Claude 2.1
+                  </span>
+                  {!apiKeyStatus['claude-2.1'] && (
                     <AlertCircle size={14} className="text-amber-400" />
                   )}
                 </div>
-              </SelectItem>
-            </SelectGroup>
-
-            <SelectGroup>
-              <SelectLabel className="text-slate-400">Local</SelectLabel>
-              <SelectItem value="qwen-2.5-omni-7b" className="text-white hover:bg-slate-700">
-                <span>Qwen 2.5 Omni 7B</span>
               </SelectItem>
             </SelectGroup>
           </SelectContent>
         </Select>
 
         {currentModelInfo && (
-          <div className="mt-2 text-xs text-slate-400">
-            {currentModelInfo.description}
-          </div>
+          <motion.div 
+            className="mt-2 text-xs text-slate-400 bg-slate-800 rounded-md p-2 border border-slate-700"
+            initial={{ opacity: 0, y: -5 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="flex justify-between items-center">
+              <span className="font-medium text-slate-200">{currentModelInfo.name}</span>
+              <Badge variant="outline" className="text-[10px] py-0 h-5">
+                {currentModelInfo.releaseDate || 'Latest'}
+              </Badge>
+            </div>
+            <p className="mt-1">{currentModelInfo.description}</p>
+          </motion.div>
         )}
       </div>
 
@@ -174,7 +215,7 @@ export default function ModelSelector({
             Modo Autónomo
           </Label>
           <p className="text-xs text-slate-400">
-            Permitir que el asistente ejecute código automáticamente
+            Permitir que el asistente ejecute comandos automáticamente
           </p>
         </div>
         <Switch
@@ -183,6 +224,20 @@ export default function ModelSelector({
           onCheckedChange={toggleDevelopmentMode}
         />
       </div>
+      
+      {developmentMode === 'autonomous' && (
+        <motion.div 
+          className="p-2 bg-blue-900/20 rounded-md border border-blue-800"
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          exit={{ opacity: 0, height: 0 }}
+        >
+          <p className="text-xs text-slate-300">
+            <span className="font-medium text-blue-400">Modo autónomo activado:</span> El asistente 
+            ejecutará los comandos automáticamente sin pedir confirmación.
+          </p>
+        </motion.div>
+      )}
     </div>
   );
 }

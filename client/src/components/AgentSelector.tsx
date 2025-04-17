@@ -1,9 +1,11 @@
+
 import React from 'react';
 import { AgentType } from '@/lib/aiService';
 import { Card, CardContent } from '@/components/ui/card';
 import { motion } from 'framer-motion';
-import { Bot, Terminal, Code, Workflow, Check } from 'lucide-react';
+import { Bot, Terminal, Code, Compass, Sparkles, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
 
 export interface AgentSelectorProps {
   onAgentChange: (agent: AgentType) => void;
@@ -17,20 +19,23 @@ const agentConfig = {
     description: 'Especialista en escribir código y solucionar errores',
     color: 'from-blue-600 to-indigo-600',
     hoverColor: 'from-blue-500 to-indigo-500',
+    badge: 'Optimización de código'
   },
-  arch: {
-    icon: <Workflow className="h-5 w-5 text-purple-400" />,
+  architect: {
+    icon: <Compass className="h-5 w-5 text-amber-400" />,
     title: 'Arquitectura',
-    description: 'Especialista en diseño de sistemas y estructura de código',
-    color: 'from-purple-600 to-pink-600',
-    hoverColor: 'from-purple-500 to-pink-500',
+    description: 'Especialista en diseño de sistemas y estructura de proyectos',
+    color: 'from-amber-600 to-orange-600',
+    hoverColor: 'from-amber-500 to-orange-500',
+    badge: 'Planificación'
   },
-  adv: {
-    icon: <Terminal className="h-5 w-5 text-green-400" />,
+  advanced: {
+    icon: <Sparkles className="h-5 w-5 text-green-400" />,
     title: 'Avanzado',
-    description: 'Capacidades completas para tareas complejas',
+    description: 'Capacidades completas para tareas complejas e integraciones',
     color: 'from-emerald-600 to-green-600',
     hoverColor: 'from-emerald-500 to-green-500',
+    badge: 'Multitarea'
   },
 };
 
@@ -62,6 +67,7 @@ export default function AgentSelector({ onAgentChange, currentAgent }: AgentSele
             description={agent.description}
             color={agent.color}
             hoverColor={agent.hoverColor}
+            badge={agent.badge}
             isSelected={currentAgent === key}
             onClick={() => handleAgentChange(key as AgentType)}
           />
@@ -78,6 +84,7 @@ interface AgentCardProps {
   description: string;
   color: string;
   hoverColor: string;
+  badge?: string;
   isSelected: boolean;
   onClick: () => void;
 }
@@ -89,6 +96,7 @@ const AgentCard = ({
   description,
   color,
   hoverColor,
+  badge,
   isSelected,
   onClick,
 }: AgentCardProps) => {
@@ -111,9 +119,16 @@ const AgentCard = ({
               {icon}
             </div>
             <div>
-              <h3 className={`font-medium text-sm ${isSelected ? 'text-white' : ''}`}>
-                {title}
-              </h3>
+              <div className="flex items-center">
+                <h3 className={`font-medium text-sm ${isSelected ? 'text-white' : ''}`}>
+                  {title}
+                </h3>
+                {badge && (
+                  <Badge className={`ml-2 ${isSelected ? 'bg-white/20 text-white' : 'bg-slate-700'}`} variant="outline">
+                    {badge}
+                  </Badge>
+                )}
+              </div>
               <p className={`text-xs ${isSelected ? 'text-white/80' : 'text-slate-400'}`}>
                 {description}
               </p>
