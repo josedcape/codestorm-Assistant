@@ -85,6 +85,12 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [newConversationTitle, setNewConversationTitle] = useState('');
+  const [showFileCreateDialog, setShowFileCreateDialog] = useState(false);
+  const [newFileData, setNewFileData] = useState<{
+    content: string;
+    language: string;
+    suggestedName: string;
+  }>({ content: '', language: '', suggestedName: '' });
   const [files, setFiles] = useState<string[]>([]); // Add state for files
 
   const chatContainerRef = useRef<HTMLDivElement>(null);

@@ -45,6 +45,10 @@ const Header: React.FC<HeaderProps> = ({
   const isMobile = useIsMobile();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen(prev => !prev);
+  };
+
   const handleToggleFileExplorer = () => {
     if (toggleFileExplorer) {
       toggleFileExplorer();
