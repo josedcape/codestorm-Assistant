@@ -1,3 +1,235 @@
+
+import React, { useState, useRef, useEffect } from 'react';
+import { SendHorizonal, Mic, MicOff, Play, Terminal } from 'lucide-react';
+import { Avatar } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useToast } from '@/hooks/use-toast';
+import { useAppContext } from '@/context/AppContext';
+import VoiceRecognition from './VoiceRecognition';
+import ReactMarkdown from 'react-markdown';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+
+interface ChatMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+}
+
+interface ChatInterfaceProps {
+  messages: ChatMessage[];
+  onSendMessage: (message: string) => void;
+  isLoading?: boolean;
+  placeholder?: string;
+}
+
+// Función para detectar comandos en el texto
+const detectCommands = (text: string): string[] => {
+  // Patrón para detectar comandos de terminal comunes
+  const commandPatterns = [
+    /`\$?\s*(npm|yarn|pnpm)\s+.*?`/g,
+    /`\$?\s*(mkdir|touch|rm|cp|mv|cd|ls|cat|echo|git|node)\s+.*?`/g,
+    /^```bash\n\$?\s*(.*?)```/gms,
+    /^```sh\n\$?\s*(.*?)```/gms,
+    /```\n\$?\s*(.*?)```/gms,
+  ];
+  
+  let commands: string[] = [];
+  
+  // Buscar comandos usando los patrones
+  for (const pattern of commandPatterns) {
+    const matches = text.matchAll(pattern);
+    for (const match of matches) {
+      let cmd = match[1] || match[0];
+      // Limpiar el comando
+      cmd = cmd.replace(/^`\$?\s*|\s*`$/g, '');
+      cmd = cmd.replace(/^```(bash|sh)?\n\$?\s*|\s*```$/g, '');
+      
+      if (cmd && !commands.includes(cmd)) {
+        commands.push(cmd);
+      }
+    }
+  }
+  
+  return commands;
+};
+
+const ChatInterface: React.FC<ChatInterfaceProps> = ({
+  messages,
+  onSendMessage,
+  isLoading = false,
+  placeholder = 'Mensaje al asistente...'
+}) => {
+  const [input, setInput] = useState('');
+  const [isVoiceActive, setIsVoiceActive] = useState(false);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
+  const { executeCommand } = useAppContext();
+  
+  // Scroll al final cuando cambian los mensajes
+  useEffect(() => {
+    if (scrollAreaRef.current) {
+      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      }
+    }
+  }, [messages]);
+
+  const handleSendMessage = () => {
+    if (input.trim() !== '') {
+      onSendMessage(input);
+      setInput('');
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  const handleVoiceTranscript = (transcript: string) => {
+    setInput(transcript);
+  };
+
+  const executeDetectedCommand = async (command: string) => {
+    try {
+      await executeCommand(command);
+      toast({
+        title: "Comando ejecutado",
+        description: `"${command}" se ha ejecutado correctamente`
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo ejecutar el comando",
+        variant: "destructive"
+      });
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-full border border-border rounded-md bg-sidebar">
+      <ScrollArea ref={scrollAreaRef} className="flex-1 p-4">
+        {messages.map((message, index) => {
+          // Detectar comandos en mensajes del asistente
+          const detectedCommands = message.role === 'assistant' ? detectCommands(message.content) : [];
+          
+          return (
+            <div key={index} className="mb-4">
+              <div className="flex items-start">
+                <Avatar className="h-8 w-8 mr-2">
+                  <div className={`h-full w-full flex items-center justify-center ${
+                    message.role === 'user' ? 'bg-blue-500' : 'bg-purple-600'
+                  }`}>
+                    {message.role === 'user' ? 'U' : 'AI'}
+                  </div>
+                </Avatar>
+                <div className="flex-1">
+                  <ReactMarkdown
+                    className="prose prose-sm dark:prose-invert max-w-none"
+                    components={{
+                      code({node, inline, className, children, ...props}) {
+                        const match = /language-(\w+)/.exec(className || '');
+                        return !inline && match ? (
+                          <SyntaxHighlighter
+                            style={oneDark}
+                            language={match[1]}
+                            PreTag="div"
+                            {...props}
+                          >
+                            {String(children).replace(/\n$/, '')}
+                          </SyntaxHighlighter>
+                        ) : (
+                          <code className={className} {...props}>
+                            {children}
+                          </code>
+                        );
+                      }
+                    }}
+                  >
+                    {message.content}
+                  </ReactMarkdown>
+                  
+                  {/* Botones para ejecutar comandos detectados */}
+                  {detectedCommands.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {detectedCommands.map((cmd, cmdIndex) => (
+                        <Button
+                          key={cmdIndex}
+                          variant="outline"
+                          size="sm"
+                          className="text-xs flex items-center gap-1"
+                          onClick={() => executeDetectedCommand(cmd)}
+                        >
+                          <Terminal size={12} />
+                          <span className="max-w-[200px] truncate">{cmd}</span>
+                          <Play size={12} />
+                        </Button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+        {isLoading && (
+          <div className="flex items-center">
+            <div className="ml-10 bg-muted-foreground/20 rounded px-2 py-1">
+              <span className="animate-pulse">Pensando...</span>
+            </div>
+          </div>
+        )}
+      </ScrollArea>
+      
+      <div className="p-2 border-t border-border">
+        <div className="flex items-end">
+          <Textarea
+            placeholder={placeholder}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className="min-h-[60px] resize-none"
+            disabled={isLoading}
+          />
+          <div className="flex flex-col gap-2 ml-2">
+            <Button 
+              size="icon" 
+              variant={isVoiceActive ? "destructive" : "outline"} 
+              className="h-8 w-8" 
+              onClick={() => setIsVoiceActive(!isVoiceActive)}
+            >
+              {isVoiceActive ? <MicOff size={16} /> : <Mic size={16} />}
+            </Button>
+            <Button 
+              size="icon" 
+              variant="default" 
+              className="h-8 w-8" 
+              onClick={handleSendMessage}
+              disabled={input.trim() === '' || isLoading}
+            >
+              <SendHorizonal size={16} />
+            </Button>
+          </div>
+        </div>
+        
+        {isVoiceActive && (
+          <VoiceRecognition 
+            onTranscript={handleVoiceTranscript} 
+            onCommand={() => {}} 
+          />
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default ChatInterface;
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useChat, Message } from '@/hooks/useChat';
 import { useToast } from "@/hooks/use-toast";

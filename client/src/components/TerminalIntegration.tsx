@@ -1,19 +1,21 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Terminal as TerminalIcon, Play, XCircle, Copy, Check } from 'lucide-react';
+import { Terminal as TerminalIcon, Play, XCircle, Copy, Check, SendHorizonal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAppContext } from '@/context/AppContext';
+import { useToast } from '@/hooks/use-toast';
 
 interface TerminalIntegrationProps {
   onExecuteCommand?: (command: string) => Promise<string>;
 }
 
 const TerminalIntegration: React.FC<TerminalIntegrationProps> = ({ onExecuteCommand }) => {
-  const { addTerminalLine, clearTerminal: clearAppTerminal } = useAppContext();
+  const { addTerminalLine, clearTerminal: clearAppTerminal, executeCommand: executeAppCommand } = useAppContext();
   const [command, setCommand] = useState('');
   const [history, setHistory] = useState<Array<{type: 'command' | 'response', content: string}>>([]);
   const [isExecuting, setIsExecuting] = useState(false);
   const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
   
   const terminalRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);

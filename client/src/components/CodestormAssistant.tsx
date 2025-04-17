@@ -770,7 +770,7 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
               <div className="flex flex-col h-full">
                 <div className="flex justify-between items-center mb-2">
                   <h4 className="font-medium">Terminal</h4>
-                  <div className="flex space-x-1">
+                  <div className="flex space-x-1 w-full max-w-[500px]">
                     <Input 
                       placeholder="Ejecutar comando..." 
                       className="h-8 text-xs bg-slate-800 border-slate-700"
@@ -794,6 +794,20 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
                         }
                       }}
                     />
+                    <Button 
+                      variant="default" 
+                      size="sm" 
+                      className="h-8"
+                      onClick={() => {
+                        const input = document.querySelector('input[placeholder="Ejecutar comando..."]') as HTMLInputElement;
+                        if (input && input.value) {
+                          executeCommand(input.value);
+                          input.value = '';
+                        }
+                      }}
+                    >
+                      <SendHorizonal size={14} />
+                    </Button>
                     <Button 
                       size="sm" 
                       variant="default"

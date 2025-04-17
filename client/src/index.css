@@ -117,6 +117,38 @@ code {
 }
 
 .agent-panel.visible {
+
+/* Estilos para botones de comando */
+.command-button {
+  background-color: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  font-family: monospace;
+  transition: all 0.2s ease;
+}
+
+.command-button:hover {
+  background-color: rgba(59, 130, 246, 0.2);
+  border-color: rgba(59, 130, 246, 0.5);
+}
+
+.terminal-command {
+  font-family: monospace;
+  padding: 2px 6px;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 250px;
+  display: inline-block;
+}
+
+@media (max-width: 640px) {
+  .terminal-command {
+    max-width: 150px;
+  }
+}
+
   transform: translateY(0);
 }
 
