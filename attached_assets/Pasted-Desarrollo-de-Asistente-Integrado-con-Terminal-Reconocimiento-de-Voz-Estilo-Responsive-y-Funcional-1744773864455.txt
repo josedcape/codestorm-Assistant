@@ -1,0 +1,143 @@
+Desarrollo de Asistente Integrado con Terminal, Reconocimiento de Voz, Estilo Responsive y Funcionalidades Avanzadas con Personalización y Configuración
+
+El programa que se debe desarrollar debe tener un asistente capaz de integrarse directamente con la terminal, lo que permitirá al usuario escribir instrucciones en lenguaje natural. El asistente será responsable de interpretar estas instrucciones y enviar los comandos ejecutables correspondientes a la terminal, permitiendo que los cambios se realicen de forma automatizada.
+
+Características clave del asistente:
+
+Interacción en lenguaje natural:
+
+El asistente debe interpretar las instrucciones dadas por el usuario en lenguaje natural. Por ejemplo, si el usuario solicita la creación de un chatbot moderno, el asistente debe ser capaz de determinar las librerías y paquetes necesarios, así como los directorios, carpetas y archivos que debe tener el proyecto.
+
+Una vez analizada la solicitud, el asistente enviará los comandos necesarios a la terminal para que se realicen las acciones automáticamente. Esto incluye la creación de archivos y carpetas, instalación de librerías, y cualquier otro cambio relevante en el entorno de desarrollo.
+
+Integración con terminal:
+
+El asistente debe interactuar de forma fluida con la terminal del sistema operativo para ejecutar los comandos automáticamente.
+
+La terminal debería ser capaz de realizar tareas de desarrollo sin la intervención manual del usuario. Por ejemplo, si el usuario necesita configurar un entorno de desarrollo para un chatbot, el asistente debe enviar los comandos necesarios para instalar los paquetes adecuados, crear los directorios del proyecto y preparar los archivos iniciales del proyecto.
+
+Reconocimiento de voz:
+
+Se debe integrar una función de reconocimiento de voz mediante speech recognition. Esto permitirá que el usuario dé instrucciones de forma verbal, facilitando aún más la interacción con el asistente, especialmente cuando el usuario no quiera escribir los comandos manualmente.
+
+Esta funcionalidad debe ser capaz de reconocer diferentes comandos relacionados con la creación de proyectos, ejecución de programas y cambios en la estructura de archivos.
+
+Carga de archivos:
+
+El asistente debe permitir la carga de archivos de diferentes tipos, tales como documentos (tipo .doc), archivos de JavaScript (.js), HTML (.html), entre otros. El usuario podrá cargar estos archivos directamente en el entorno de trabajo.
+
+Una vez cargados, el asistente podrá realizar modificaciones, leer el contenido o gestionar los archivos según lo solicitado por el usuario.
+
+Cambio de modelos de lenguaje:
+
+El asistente debe ser capaz de cambiar entre diferentes modelos de lenguaje según sea necesario. Los modelos disponibles deben incluir:
+
+GPT-4.0: Un modelo multimodal y multilingüe para texto, imágenes y audio (Mayo 2024).
+
+Gemini 2.5: Un modelo avanzado para texto, audio, imágenes, video y código (Marzo 2025).
+
+Claude 3.7: Un modelo híbrido para codificación y resolución de problemas complejos (Febrero 2025).
+
+Claude 3.5 Sonnet V2: Equilibrio entre rendimiento y velocidad.
+
+Qwen 2.5-Omni-7B: Modelo multimodal para texto, imagen, audio y video (Marzo 2025).
+
+El asistente debería permitir al usuario seleccionar y cambiar entre estos modelos según sus necesidades y el tipo de tarea a ejecutar, lo que permitirá flexibilidad y eficiencia en las interacciones.
+
+Diseño de la Interfaz Gráfica:
+
+El diseño de la interfaz del asistente debe ser completamente atractivo y moderno, siguiendo un estilo futurista que refleje el avance tecnológico y la innovación del programa.
+
+Fondo y Color:
+
+El fondo debe ser azul oscuro, lo que brindará una sensación de seriedad y modernidad, además de permitir que los elementos de la interfaz se destaquen visualmente.
+
+Título:
+
+El título debe ser prominente, ubicado en la parte superior de la interfaz, y con un diseño en letras doradas. Las letras deben tener un estilo moderno y elegante, con un toque minimalista que resalte en el fondo oscuro.
+
+Animaciones:
+
+Se deben agregar animaciones sutiles pero impactantes para crear una experiencia dinámica. Por ejemplo, cuando el asistente esté procesando una tarea, puede mostrar una animación de carga futurista (como un círculo giratorio o una línea de progresión). Además, los iconos y botones pueden tener animaciones suaves al pasar el mouse o hacer clic.
+
+Iconos:
+
+Los iconos deben ser representativos del tema tratado, como iconos relacionados con la terminal, programación, voz, carga de archivos, y modelos de lenguaje. Se pueden usar iconos planos y modernos con un diseño minimalista. Los iconos deben tener un toque futurista, tal vez en tonos plateados o dorados, para hacerlos resaltar contra el fondo oscuro.
+
+Contenedores y Bordes:
+
+Los contenedores que agruparán diferentes funcionalidades (por ejemplo, el área de entrada de comandos, las opciones de modelos de lenguaje y la carga de archivos) deben tener bordes plateados para dar un acabado elegante y profesional.
+
+Los bordes deben tener un efecto sutil, tal vez con un brillo suave para resaltar la interfaz sin ser demasiado intrusivo.
+
+Estilo Futurista:
+
+El estilo debe estar orientado a la estética futurista, con líneas limpias, transiciones suaves y un diseño de interface que refleje la tecnología avanzada del asistente.
+
+El uso de sombras suaves y gradientes de color puede añadir un toque moderno, sin perder la claridad visual.
+
+Interactividad y Funcionalidad:
+
+La interfaz debe ser completamente interactiva, permitiendo que los usuarios puedan acceder rápidamente a las funcionalidades del asistente. Esto incluye el uso de botones de acción que lleven a diferentes secciones como la configuración de modelos, carga de archivos y comandos.
+
+Estilo Responsive:
+
+Compatibilidad en dispositivos móviles y de escritorio:
+
+El asistente debe ser completamente responsive, adaptándose automáticamente a dispositivos móviles y escritorios, garantizando una experiencia de usuario fluida en cualquier plataforma.
+
+El diseño debe ser sencillo y fácil de usar en ambas versiones, tanto en pantallas grandes como pequeñas.
+
+Botones flotantes y expansión de ventanas:
+
+Si es necesario, se pueden agregar botones flotantes que permitan al usuario acceder a todas las opciones fácilmente. Estos botones deben tener un diseño minimalista y deben ser fácilmente accesibles desde cualquier sección de la interfaz.
+
+También debe existir la opción de expandir ventanas o archivos, permitiendo que el usuario personalice el tamaño de las áreas de trabajo para su comodidad.
+
+Área de Conversaciones:
+
+El asistente debe incluir un área donde se puedan guardar y eliminar conversaciones. Esta área debe ser funcional, permitiendo al usuario tener un historial de interacciones.
+
+Esta área deberá poderse ocultar fácilmente mediante un botón, permitiendo al usuario mantener la interfaz limpia cuando no se necesite el historial.
+
+Agentes Especializados:
+
+Agente de Desarrollo:
+
+Este agente será responsable de hacer correcciones y editar el código en tiempo real. El usuario podrá darle instrucciones al agente, quien automáticamente realizará las modificaciones necesarias en el código y explicará los cambios realizados en cada sesión.
+
+Agente de Arquitectura:
+
+El agente de arquitectura se encargará de crear una planificación inicial del proyecto. Esto incluirá todos los directorios, archivos y todas las implementaciones necesarias. Este agente será crucial para determinar qué librerías, paquetes y configuraciones deben instalarse para la construcción del proyecto.
+
+Este agente tendrá más información acerca del frontend y será el responsable de organizar cómo se estructurará la interfaz, haciendo recomendaciones y ajustando el diseño en tiempo real.
+
+Agente Avanzado de Software:
+
+Este agente se encargará de gestionar todas las integraciones avanzadas del proyecto. Tendrá la responsabilidad de organizar funciones complejas, realizar cambios en el backend y realizar conexiones necesarias dentro del programa, asegurando que las integraciones de software funcionen perfectamente.
+
+Selección de Agentes:
+
+El usuario podrá elegir entre estos agentes según la fase del desarrollo en la que se encuentre. Dependiendo del agente seleccionado, el tipo de respuesta y la gestión del desarrollo cambiará. El agente de desarrollo se centrará en el código, el agente de arquitectura en la estructura del proyecto y el agente avanzado de software en la gestión de integraciones y funciones avanzadas.
+
+Vista Previa:
+
+El asistente debe incluir una vista previa que se cargue en un webview. Esta funcionalidad permitirá al usuario ver cómo se ejecutan sus cambios en tiempo real en un entorno web, facilitando la visualización de las modificaciones antes de aplicarlas. Esta vista previa debe ser completamente funcional y permitir a los usuarios realizar ajustes en tiempo real.
+
+Función de Configuración:
+
+Configuración de Claves API:
+
+Dentro de la configuración del asistente, los usuarios deben poder ingresar sus propias claves API. De esta forma, no será indispensable usar las claves predeterminadas proporcionadas, permitiendo que el usuario trabaje con sus claves personalizadas para acceder a diferentes servicios o API.
+
+Modo de Confirmación o Automático:
+
+En la configuración, se incluirá una opción para que el usuario decida si el asistente debe pedir confirmación antes de aplicar los cambios al construir el programa o si debe trabajar en modo automático. En modo automático, el asistente tomará decisiones y realizará los cambios sin pedir confirmación, agilizando el proceso.
+
+Código Limpio y Highlights:
+
+El código generado por el asistente debe ser siempre limpio y bien estructurado, asegurando que sea fácil de entender y mantener. Además, se debe incluir code highlights (resaltado de sintaxis), lo que permitirá que el código se muestre en colores según la sintaxis del lenguaje de programación. Esto hará que el código sea más atractivo visualmente y ayudará a los usuarios a identificar rápidamente las diferentes partes del código.
+
+Este asistente ofrecerá no solo una experiencia fluida y eficiente, sino también la flexibilidad para adaptarse a las necesidades específicas del usuario a través de su configuración personalizable y funcionalidad avanzada. Con opciones de agentes, la carga de archivos, un diseño responsive y un código limpio, el asistente se convertirá en una herramienta integral para cualquier tipo de desarrollo de software.
+
+Este es el esquema completo con todas las funcionalidades adicionales que pediste, incluyendo la configuración de las claves API, las opciones de confirmación automática, y la implementación de un sistema de visualización de código limpio. Si necesitas más detalles o ajustes, no dudes en indicarlo.

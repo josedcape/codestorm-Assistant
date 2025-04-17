@@ -1,0 +1,525 @@
+import { Request, Response } from "express";
+import axios from "axios";
+
+// Función para generar una respuesta de OpenAI
+async function generateOpenAIResponse(
+  prompt: string,
+  code?: string,
+  agentType?: string,
+  apiKey?: string,
+) {
+  const openaiKey = apiKey || process.env.OPENAI_API_KEY;
+  if (!openaiKey) {
+    throw new Error(
+      "❌ API key de OpenAI no configurada. Por favor, configura tu clave API en la configuración.",
+    );
+  }
+
+  // Seleccionar el sistema de instrucciones según el tipo de agente
+  let systemPrompt =
+    "Eres un asistente de programación experto. Responde en español.";
+
+  if (agentType === "dev") {
+    systemPrompt = `Eres un Agente de Desarrollo experto, altamente capacitado en la edición y optimización de código en tiempo real.
+Tus capacidades incluyen:
+- Corrección y refactorización de código utilizando linters y herramientas como Pylint, ESLint y Prettier
+- Optimización de rendimiento con técnicas como caching, optimización de consultas SQL, lazy loading y code splitting
+- Integración de frameworks modernos como FastAPI, Flask, Express.js, React con Hooks y React Router
+- Automatización de tareas con herramientas CI/CD como GitHub Actions y CircleCI
+- Generación de código limpio, legible, modular y mantenible
+
+Responde siempre en español y ofrece soluciones prácticas con ejemplos de código específicos.`;
+  } else if (agentType === "architect") {
+    systemPrompt = `Eres un Agente de Arquitectura experto, responsable de diseñar arquitecturas escalables y optimizadas.
+Tus capacidades incluyen:
+- Definición de estructuras de proyecto organizadas con herramientas como Docker y Kubernetes
+- Selección de tecnologías y frameworks adecuados (Django, FastAPI, React, Redux, React Native)
+- Asesoría en elección de bases de datos (PostgreSQL, MongoDB, Firebase, AWS DynamoDB)
+- Implementación de microservicios y arquitecturas basadas en eventos con RabbitMQ o Kafka
+- Planificación de UI/UX y patrones de diseño como Atomic Design, Styled Components y Material UI
+
+Responde siempre en español y ofrece soluciones estructuradas con diagramas y ejemplos cuando sea posible.`;
+  } else if (agentType === "advanced") {
+    systemPrompt = `Eres un Agente Avanzado de Software especializado en integraciones complejas y creación de funciones avanzadas.
+Tus capacidades incluyen:
+- Gestión de APIs (RESTful, GraphQL) y microservicios con Docker y Kubernetes
+- Optimización de backend con Nginx, Redis y manejo de tareas asíncronas con Celery
+- Automatización avanzada con Node.js, Grunt y Gulp
+- Implementación de autenticación segura con OAuth 2.0, JWT y Passport.js
+- Integración con servicios cloud (AWS, Google Cloud, Azure) 
+- Configuración de despliegue y pruebas automatizadas con Docker, Heroku, Jest, PyTest y Mocha
+
+Responde siempre en español y ofrece soluciones técnicas avanzadas con ejemplos de implementación detallados.`;
+  }
+
+  const messages = [
+    { role: "system", content: systemPrompt },
+    { role: "user", content: prompt },
+  ];
+
+  // Si hay código, añadirlo como contexto
+  if (code) {
+    messages.push({
+      role: "user",
+      content: `Contexto de código:\n\`\`\`\n${code}\n\`\`\``,
+    });
+  }
+
+  try {
+    console.log("Enviando solicitud a OpenAI...");
+    
+    // Verificar que la clave API sea válida
+    if (!openaiKey || openaiKey === 'your-openai-api-key' || openaiKey.startsWith('sk-proj-')) {
+      throw new Error('La clave API de OpenAI no es válida. Por favor, configura una clave válida');
+    }
+
+    const response = await axios.post(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        model: "gpt-4",  // Cambiado de gpt-4o a gpt-4
+        messages,
+        temperature: 0.7,
+        max_tokens: 1000,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${openaiKey}`,
+        },
+      },
+    );
+
+    // Verificar que la respuesta tenga el formato esperado
+    if (
+      response.data.choices &&
+      response.data.choices.length > 0 &&
+      response.data.choices[0].message &&
+      response.data.choices[0].message.content
+    ) {
+      console.log("Respuesta de OpenAI recibida correctamente");
+      return response.data.choices[0].message.content;
+    } else {
+      console.error(
+        "Respuesta de OpenAI en formato inesperado:",
+        response.data,
+      );
+      throw new Error("Formato de respuesta de OpenAI inesperado");
+    }
+  } catch (error) {
+    console.error("Error al llamar a la API de OpenAI:", error);
+    if (axios.isAxiosError(error) && error.response) {
+      console.error("Detalles de la respuesta de error:", error.response.data);
+    }
+    throw error;
+  }
+}
+
+// Función para generar una respuesta de Gemini
+async function generateGeminiResponse(prompt: string, code?: string) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("Gemini API key no configurada");
+  }
+
+  const fullPrompt = code
+    ? `${prompt}\n\nContexto de código:\n\`\`\`\n${code}\n\`\`\``
+    : prompt;
+
+  try {
+    // Endpoint actualizado para Gemini 1.5 Pro
+    const response = await axios.post(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent`,
+      {
+        contents: [
+          {
+            parts: [
+              {
+                text: `Eres un asistente de programación experto. Responde siempre en español.\n\n${fullPrompt}`,
+              },
+            ],
+          },
+        ],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 1000,
+        },
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": apiKey,
+        },
+        params: {
+          key: apiKey,  // También incluido como parámetro de URL para mayor compatibilidad
+        },
+      },
+    );
+
+    // Verificar que la respuesta tenga el formato esperado
+    if (
+      response.data.candidates &&
+      response.data.candidates.length > 0 &&
+      response.data.candidates[0].content &&
+      response.data.candidates[0].content.parts &&
+      response.data.candidates[0].content.parts.length > 0
+    ) {
+      return response.data.candidates[0].content.parts[0].text;
+    } else {
+      console.error(
+        "Respuesta de Gemini en formato inesperado:",
+        response.data,
+      );
+      return "Lo siento, no pude procesar la respuesta de Gemini. Por favor intenta con otro modelo.";
+    }
+  } catch (error) {
+    console.error("Error al llamar a la API de Gemini:", error);
+    if (axios.isAxiosError(error) && error.response) {
+      console.error("Detalles de la respuesta de error:", error.response.data);
+    }
+    throw error;
+  }
+}
+
+// Función para generar una respuesta de Anthropic/Claude
+async function generateClaudeResponse(
+  prompt: string,
+  code?: string,
+  model: string = "claude-3-sonnet-20240229",
+) {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    throw new Error("Anthropic API key no configurada");
+  }
+
+  const fullPrompt = code
+    ? `${prompt}\n\nContexto de código:\n\`\`\`\n${code}\n\`\`\``
+    : prompt;
+
+  try {
+    const response = await axios.post(
+      "https://api.anthropic.com/v1/messages",
+      {
+        model: model,
+        max_tokens: 1000,
+        temperature: 0.7,
+        system:
+          "Actúa como un desarrollador altamente capacitado que puede ayudar, hacer recomendaciones y sugerencias para desarrollar de la forma más eficiente aplicaciones según las indicaciones del usuario. Tienes la capacidad de crear archivos, carpetas y ejecutar comandos en la terminal. Ofrece siempre soluciones prácticas y eficientes. Responde siempre en español.",
+        messages: [
+          {
+            role: "user",
+            content: fullPrompt,
+          },
+        ],
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "anthropic-api-key": apiKey,  // Corregido: de "x-api-key" a "anthropic-api-key"
+          "anthropic-version": "2023-06-01",
+        },
+      },
+    );
+
+    // Claude devuelve la respuesta en un formato diferente
+    if (response.data.content && response.data.content.length > 0) {
+      return response.data.content[0].text;
+    } else {
+      console.error("Respuesta de Claude sin contenido:", response.data);
+      throw new Error("Formato de respuesta de Claude inesperado");
+    }
+  } catch (error) {
+    console.error("Error al llamar a la API de Claude:", error);
+    if (axios.isAxiosError(error) && error.response) {
+      console.error("Detalles de la respuesta de error:", error.response.data);
+    }
+    throw error;
+  }
+}
+
+// Ruta para manejar la generación de respuestas
+export async function handleAIGenerate(req: Request, res: Response) {
+  try {
+    let { model, prompt, code, agentType } = req.body;
+    let response;
+    let warning = null;
+
+    console.log(`Generando respuesta con modelo ${model} y agente ${agentType}. Prompt: ${prompt.substring(0, 50)}...`);
+
+    // Verificar APIs disponibles
+    const openaiKey = process.env.OPENAI_API_KEY;
+    const anthropicKey = process.env.ANTHROPIC_API_KEY;
+    const geminiKey = process.env.GEMINI_API_KEY;
+
+    console.log("API Keys disponibles:");
+    console.log(`OpenAI: ${openaiKey ? 'Configurada' : 'No configurada'}`);
+    console.log(`Anthropic: ${anthropicKey ? 'Configurada' : 'No configurada'}`);
+    console.log(`Gemini: ${geminiKey ? 'Configurada' : 'No configurada'}`);
+
+    const modelos_disponibles = [];
+    if (openaiKey) modelos_disponibles.push('gpt-4o');
+    if (geminiKey) modelos_disponibles.push('gemini-2.5');
+    if (anthropicKey) {
+      modelos_disponibles.push('claude-3-7');
+      modelos_disponibles.push('claude-3-5-sonnet-v2');
+    }
+
+    console.log("Modelos disponibles:", modelos_disponibles);
+    console.log("Modelo solicitado:", model);
+
+    // Si el modelo solicitado no está disponible, usar el primer modelo disponible
+    if (!modelos_disponibles.includes(model)) {
+      const modelo_alternativo = modelos_disponibles[0];
+      warning = `El modelo ${model} no está disponible. Usando ${modelo_alternativo} como alternativa.`;
+      console.log(warning);
+      model = modelo_alternativo;
+    }
+
+    try {
+      switch (model) {
+        case "gpt-4o":
+          if (!openaiKey) throw new Error("API key de OpenAI no configurada");
+          console.log("Enviando solicitud a OpenAI...");
+          response = await generateOpenAIResponse(prompt, code, agentType);
+          break;
+        case "gemini-2.5":
+          if (!geminiKey) throw new Error("API key de Gemini no configurada");
+          console.log("Enviando solicitud a Gemini...");
+          response = await generateGeminiResponse(prompt, code);
+          break;
+        case "claude-3-7":
+        case "claude-3-5-sonnet-v2":
+          if (!anthropicKey) throw new Error("API key de Anthropic no configurada");
+          console.log("Enviando solicitud a Anthropic...");
+          response = await generateClaudeResponse(prompt, code, model);
+          break;
+        default:
+          throw new Error(`Modelo ${model} no soportado`);
+      }
+
+      return res.json({ response, warning });
+    } catch (error: any) {
+      console.error(`Error específico del modelo ${model}:`, error);
+      
+      // Intentar con el siguiente modelo disponible
+      for (const modelo_alternativo of modelos_disponibles) {
+        if (modelo_alternativo !== model) {
+          try {
+            console.log(`Intentando con ${modelo_alternativo} como alternativa...`);
+            warning = `El modelo ${model} falló. Usando ${modelo_alternativo} como alternativa.`;
+            
+            switch (modelo_alternativo) {
+              case "gpt-4o":
+                response = await generateOpenAIResponse(prompt, code, agentType);
+                break;
+              case "gemini-2.5":
+                response = await generateGeminiResponse(prompt, code);
+                break;
+              case "claude-3-7":
+              case "claude-3-5-sonnet-v2":
+                response = await generateClaudeResponse(prompt, code, modelo_alternativo);
+                break;
+            }
+            
+            return res.json({ response, warning });
+          } catch (fallbackError) {
+            console.error(`El fallback a ${modelo_alternativo} también falló:`, fallbackError);
+          }
+        }
+      }
+      
+      // Si llegamos aquí, ningún modelo funcionó
+      throw new Error(`Todos los modelos disponibles fallaron. Error original: ${error.message}`);
+    }
+  } catch (error: any) {
+    console.error("Error al generar respuesta de IA:", error);
+    res.status(500).json({
+      error: `⚠️ **Error**: ${error.message}`,
+    });
+  }
+}
+
+// Ruta para ejecutar comandos de terminal
+export async function handleTerminalExecute(req: Request, res: Response) {
+  try {
+    const { command } = req.body;
+
+    if (!command) {
+      return res.status(400).json({ error: "Se requiere un comando" });
+    }
+
+    // Implementación básica - en un entorno real deberías usar
+    // medidas de seguridad adicionales antes de ejecutar comandos
+    const { exec } = require("child_process");
+
+    exec(command, (error: any, stdout: string, stderr: string) => {
+      if (error) {
+        return res.status(500).json({ error: error.message });
+      }
+
+      if (stderr) {
+        return res.json({ output: stderr });
+      }
+
+      res.json({ output: stdout });
+    });
+  } catch (error: any) {
+    console.error("Error al ejecutar comando:", error);
+    res
+      .status(500)
+      .json({ error: error.message || "Error interno del servidor" });
+  }
+}
+
+// Función para manejar la corrección de código
+export async function handleCodeCorrection(req: Request, res: Response) {
+  try {
+    const { content, instructions, language, fileId, projectId } = req.body;
+
+    if (!content || !instructions) {
+      return res
+        .status(400)
+        .json({
+          error: "Se requieren el contenido del código y las instrucciones",
+        });
+    }
+
+    console.log(
+      `Solicitando corrección de código. Lenguaje: ${language}, Instrucciones: ${instructions.substring(0, 50)}...`,
+    );
+
+    // Construir un prompt específico para la corrección de código
+    const prompt = `
+Actúa como un experto en desarrollo de software, especializado en ${language}.
+Por favor, revisa y corrige el siguiente código según estas instrucciones: "${instructions}"
+
+Código a corregir:
+\`\`\`${language}
+${content}
+\`\`\`
+
+Proporciona el código corregido junto con una explicación de los cambios realizados.
+Devuelve la respuesta en el siguiente formato:
+1. El código corregido
+2. Una lista de los cambios específicos realizados con números de línea
+3. Una explicación general de las mejoras
+`;
+
+    // Usar el modelo de GPT-4 para obtener la mejor corrección
+    const response = await generateOpenAIResponse(prompt);
+
+    // Procesar la respuesta para extraer el código corregido y explicaciones
+    const correctedCode = extractCorrectedCode(response, language);
+    const changes = extractChanges(response);
+    const explanation = extractExplanation(response);
+
+    console.log("Corrección de código generada exitosamente");
+
+    res.json({
+      correctedCode: correctedCode || content, // Si no se pudo extraer, devolver el código original
+      changes,
+      explanation,
+    });
+  } catch (error: any) {
+    console.error("Error al corregir código:", error);
+    let errorMessage = "Error interno al corregir el código";
+
+    if (error.response && error.response.data) {
+      errorMessage = `Error: ${error.message}. Detalles: ${JSON.stringify(error.response.data)}`;
+    } else if (error.message) {
+      errorMessage = `Error: ${error.message}`;
+    }
+
+    res.status(500).json({ error: errorMessage });
+  }
+}
+
+// Función auxiliar para extraer el código corregido de la respuesta
+function extractCorrectedCode(
+  response: string,
+  language: string,
+): string | null {
+  // Intentar encontrar el código entre bloques de código markdown
+  const codeBlockRegex = new RegExp(
+    `\`\`\`(?:${language})?\\n([\\s\\S]*?)\\n\`\`\``,
+    "i",
+  );
+  const match = response.match(codeBlockRegex);
+
+  if (match && match[1]) {
+    return match[1].trim();
+  }
+
+  // Si no hay bloques de código, intentar extraer de otras formas
+  // Por ejemplo, buscar secciones que empiecen con "Código corregido:"
+  const sectionRegex =
+    /(?:Código corregido:|Código mejorado:|Aquí está el código corregido:)(?:\s*\n+)?([\s\S]+?)(?:\n\s*\n|$)/i;
+  const sectionMatch = response.match(sectionRegex);
+
+  if (sectionMatch && sectionMatch[1]) {
+    return sectionMatch[1].trim();
+  }
+
+  return null;
+}
+
+// Función auxiliar para extraer los cambios realizados
+function extractChanges(
+  response: string,
+): { description: string; lineNumbers?: number[] }[] {
+  const changes: { description: string; lineNumbers?: number[] }[] = [];
+
+  // Buscar patrones como "Línea 10: Cambié X por Y"
+  const changeRegex =
+    /(?:línea|líneas)\s+(\d+(?:\s*[-,]\s*\d+)*)\s*:\s*([^\n]+)/gi;
+  let match;
+
+  while ((match = changeRegex.exec(response)) !== null) {
+    const lineNumbersText = match[1];
+    const description = match[2].trim();
+
+    // Procesar números de línea (puede ser "10", "10-15", "10, 11, 12", etc.)
+    const lineNumbers = lineNumbersText
+      .split(/\s*[-,]\s*/)
+      .map((n) => parseInt(n.trim(), 10));
+
+    changes.push({
+      description,
+      lineNumbers,
+    });
+  }
+
+  // Si no encontramos cambios con el patrón de línea, buscar listas
+  if (changes.length === 0) {
+    const listItemRegex = /(?:^|\n)(?:[*-]|\d+\.)\s*([^\n]+)/g;
+
+    while ((match = listItemRegex.exec(response)) !== null) {
+      const description = match[1].trim();
+      if (
+        description &&
+        !description.toLowerCase().includes("código corregido") &&
+        !description.toLowerCase().includes("explicación")
+      ) {
+        changes.push({ description });
+      }
+    }
+  }
+
+  return changes;
+}
+
+// Función auxiliar para extraer la explicación general
+function extractExplanation(response: string): string | undefined {
+  // Buscar secciones que parezcan explicaciones
+  const explanationRegex =
+    /(?:explicación general|explicación|mejoras realizadas|resumen de cambios):\s*\n+(.+(?:\n+(?!\n*(?:código|corrección|\d+\.|[*-]|\`\`\`)).+)*)/i;
+  const match = response.match(explanationRegex);
+
+  if (match && match[1]) {
+    return match[1].trim();
+  }
+
+  return undefined;
+}
+
+
+

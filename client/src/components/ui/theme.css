@@ -1,0 +1,81 @@
+:root {
+  --background: #0f172a;
+  --foreground: #f8fafc;
+  
+  --card: #1e293b;
+  --card-foreground: #f8fafc;
+  
+  --popover: #1e293b;
+  --popover-foreground: #f8fafc;
+  
+  --primary: #ffcc00;
+  --primary-foreground: #0f172a;
+  
+  --secondary: #1e293b;
+  --secondary-foreground: #f8fafc;
+  
+  --muted: #475569;
+  --muted-foreground: #94a3b8;
+  
+  --accent: #1e40af;
+  --accent-foreground: #f8fafc;
+  
+  --destructive: #dc2626;
+  --destructive-foreground: #f8fafc;
+  
+  --border: #334155;
+  --input: #1e293b;
+  --ring: #94a3b8;
+  
+  --radius: 0.5rem;
+}
+
+/* Terminal and code editor styles */
+.monaco-editor {
+  --monaco-foreground: #f8fafc;
+  --monaco-background: #0f172a;
+}
+
+.editor-tab.active {
+  border-bottom: 2px solid var(--primary);
+  background-color: rgba(30, 41, 59, 0.5);
+}
+
+.terminal {
+  background-color: #0f172a;
+  color: #f8fafc;
+  font-family: 'Fira Code', monospace;
+}
+
+/* Codestorm AI Assistant styles */
+.codestorm-assistant {
+  background-color: var(--card);
+  border: 1px solid #3b82f6;
+  border-radius: var(--radius);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.codestorm-header {
+  color: var(--primary);
+  font-weight: bold;
+  font-size: 1.5rem;
+  text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+}
+
+.codestorm-tab.active {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.codestorm-button {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+  border-radius: var(--radius);
+  transition: all 0.2s ease;
+}
+
+.codestorm-button:hover {
+  background-color: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
