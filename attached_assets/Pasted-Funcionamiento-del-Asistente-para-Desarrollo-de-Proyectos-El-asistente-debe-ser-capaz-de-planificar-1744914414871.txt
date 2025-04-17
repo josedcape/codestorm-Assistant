@@ -1,0 +1,97 @@
+Funcionamiento del Asistente para Desarrollo de Proyectos:
+El asistente debe ser capaz de planificar, crear y ejecutar un proyecto de desarrollo, ya sea una aplicación web, móvil o de escritorio, guiado por el tipo de agente seleccionado. A continuación, se describen los pasos detallados y las funcionalidades que debe tener el asistente para cumplir con esta tarea.
+
+1. Planificación del Proyecto (Agente de Arquitectura)
+El asistente debe comenzar con un plan detallado para la aplicación que se va a construir. Este plan debe basarse en las siguientes variables:
+
+Tipo de aplicación: El usuario debe especificar si la aplicación será web, móvil o de escritorio. Dependiendo de esta decisión, el asistente adaptará el resto del proceso.
+
+Framework y herramientas: Dependiendo de la plataforma seleccionada, el asistente recomendará el framework más adecuado. Por ejemplo:
+
+Para aplicaciones web: React, Angular, Vue.js (Frontend) y Node.js, Django, Flask (Backend).
+
+Para aplicaciones móviles: React Native, Flutter.
+
+Para aplicaciones de escritorio: Electron.
+
+Librerías y dependencias necesarias: El asistente determinará qué librerías, dependencias y herramientas son necesarias para el proyecto y las incluirá en el plan de acción. Por ejemplo, la instalación de paquetes como Redux para el manejo del estado en React, o Axios para la gestión de peticiones HTTP.
+
+Una vez que el plan esté listo y el agente de arquitectura haya proporcionado las recomendaciones sobre el marco y las dependencias, el asistente podrá proceder a la siguiente etapa.
+
+2. Ejecución del Proyecto (Creación Automática de Archivos y Carpetas)
+Cuando el usuario decida comenzar a construir el proyecto, el asistente debe ser capaz de ejecutar los comandos directamente en la terminal de forma autónoma o solicitando confirmación, según se haya configurado en las opciones de modo automático o modo con confirmación.
+
+Flujo de Ejecución:
+Inicio del Proyecto:
+
+El asistente, tras confirmar el plan de acción, preguntará si desea comenzar a construir el proyecto (si el usuario ha activado la opción de confirmación, esta pregunta se le hará cada vez). Si el usuario acepta, el asistente ejecutará el primer comando en la terminal.
+
+Creación de la Carpeta Raíz:
+
+El asistente ejecutará un comando para crear la carpeta raíz del proyecto. Dependiendo del entorno elegido, podría ser algo como:
+
+bash
+Copiar código
+mkdir nombre-del-proyecto
+cd nombre-del-proyecto
+Al ejecutar este comando, la carpeta raíz se creará y será visible en el explorador de archivos del usuario.
+
+Creación de Archivos Iniciales:
+
+El asistente procederá a crear los archivos necesarios para el inicio del proyecto. Por ejemplo, comenzará con el archivo index.html o index.js en el caso de una aplicación web o móvil.
+
+El comando sería algo como:
+
+bash
+Copiar código
+touch index.html
+El archivo index.html o el correspondiente para la plataforma será creado automáticamente y aparecerá en el explorador de archivos.
+
+Creación de Archivos de Configuración:
+
+Posteriormente, el asistente creará otros archivos necesarios, como archivos de configuración (webpack.config.js, babel.config.js, package.json, etc.), ejecutando los comandos adecuados. Ejemplo:
+
+bash
+Copiar código
+touch webpack.config.js
+touch babel.config.js
+touch package.json
+Instalación de Dependencias:
+
+Una vez creados los archivos iniciales, el asistente procederá a instalar las dependencias necesarias. Por ejemplo, si se está utilizando React, el asistente ejecutará:
+
+bash
+Copiar código
+npx create-react-app nombre-del-proyecto
+cd nombre-del-proyecto
+npm install axios react-redux
+Al ejecutar estos comandos, se instalarán las librerías correspondientes y el asistente irá actualizando la estructura de carpetas y archivos en el explorador, mostrando las dependencias instaladas.
+
+3. Modo Automático vs. Modo con Confirmación
+El asistente debe ofrecer al usuario la opción de ejecutar los comandos en modo automático o manual (con confirmación de cada paso). Dependiendo de esta elección, el asistente actuará de una manera diferente:
+
+Modo Automático: Si el usuario selecciona que no necesita confirmación, el asistente procederá sin interrumpir con preguntas y ejecutará cada comando de manera automática. Por ejemplo, al ejecutar los comandos de la terminal, se realizarán todos los pasos sin necesidad de que el usuario apruebe cada acción.
+
+Modo con Confirmación: Si el usuario elige el modo manual, el asistente preguntará antes de cada paso si desea proceder con la acción. Ejemplo:
+
+"¿Deseas que cree la carpeta raíz del proyecto ahora? [Sí/No]"
+
+"¿Deseas instalar las dependencias ahora? [Sí/No]"
+
+El asistente solo ejecutará los comandos si el usuario responde afirmativamente.
+
+4. Visualización del Progreso
+A medida que el asistente ejecuta los comandos y realiza cambios en el proyecto, el explorador de archivos debe actualizarse para reflejar los nuevos archivos y carpetas creados. Además, el asistente puede proporcionar retroalimentación visual dentro de la interfaz para que el usuario vea en tiempo real el progreso de la construcción del proyecto.
+
+5. Flexibilidad en la Ejecución
+El asistente debe ser flexible en términos de la estructura del proyecto y la adición de nuevas funcionalidades. Por ejemplo, si el usuario decide agregar nuevas funcionalidades o realizar cambios en la estructura del proyecto, el asistente deberá ser capaz de hacer estos ajustes ejecutando los comandos necesarios y mostrando los cambios en el explorador de archivos.
+
+Instrucción Final para el Asistente:
+Planificación inicial: El asistente debe generar un plan detallado basado en el tipo de aplicación, el framework seleccionado y las dependencias necesarias.
+
+Confirmación del usuario: El asistente debe preguntar al usuario si desea proceder con la ejecución de los comandos en modo automático o con confirmación.
+
+Ejecución de comandos: El asistente debe crear la estructura inicial del proyecto ejecutando comandos en la terminal y mostrando los cambios en el explorador de archivos, creando archivos como index.html, index.js, etc., e instalando dependencias necesarias.
+
+Interactividad: El asistente debe garantizar que el flujo de trabajo sea claro y que el usuario pueda decidir en cada momento si desea aplicar cambios automáticamente o si prefiere revisar cada acción antes de proceder.
+
