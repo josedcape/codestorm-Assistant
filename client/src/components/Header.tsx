@@ -194,7 +194,7 @@ const Header: React.FC<HeaderProps> = ({
               <div className="flex flex-col h-full bg-slate-800">
                 <div className="p-4 border-b border-slate-700 flex items-center justify-between">
                   <span className="font-semibold text-gold-400">Menú</span>
-                  <Button variant="ghost" size="icon" onClick={toggleMobileMenu}>
+                  <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(false)}>
                     <X size={18} />
                   </Button>
                 </div>

@@ -350,8 +350,6 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
     conv.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const isMobile = useMediaQuery('(max-width: 768px)');
-
   return (
     <motion.div
       initial={{ opacity: 0, x: isMobile ? 0 : 300 }}
