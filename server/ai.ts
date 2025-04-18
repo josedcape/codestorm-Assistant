@@ -237,6 +237,14 @@ async function generateClaudeResponse(
 }
 
 // Ruta para manejar la generación de respuestas
+const availableModels = {
+  'gpt-4': { provider: 'openai', name: 'GPT-4' },
+  'gpt-3.5-turbo': { provider: 'openai', name: 'GPT-3.5 Turbo' },
+  'claude-3-opus': { provider: 'anthropic', name: 'Claude 3 Opus' },
+  'claude-3-sonnet': { provider: 'anthropic', name: 'Claude 3 Sonnet' },
+  'gemini-pro': { provider: 'google', name: 'Gemini Pro' }
+};
+
 export async function handleAIGenerate(req: Request, res: Response) {
   try {
     const { model, prompt, code, agentType } = req.body;
@@ -265,18 +273,14 @@ export async function handleAIGenerate(req: Request, res: Response) {
 
     try {
       // Definir y comprobar disponibilidad de modelos
-      const availableModels = [];
-      if (openaiKey) availableModels.push("gpt-4", "gpt-3.5-turbo");
-      if (geminiKey) availableModels.push("gemini-2.5-pro");
-      if (anthropicKey) availableModels.push("claude-3", "claude-2.1");
-
-      console.log("Modelos disponibles:", availableModels);
+      const availableModelsKeys = Object.keys(availableModels);
+      console.log("Modelos disponibles:", availableModelsKeys);
       console.log("Modelo solicitado:", model);
 
       // Si el modelo solicitado no está disponible, usar un modelo alternativo
       let modelToUse = model;
-      if (!availableModels.includes(model) && availableModels.length > 0) {
-        const modelo_alternativo = availableModels[0];
+      if (!availableModelsKeys.includes(model) && availableModelsKeys.length > 0) {
+        const modelo_alternativo = availableModelsKeys[0];
         console.log(`Modelo ${model} no disponible, usando alternativa: ${modelo_alternativo}`);
         warning = `El modelo ${model} no está disponible. Usando ${modelo_alternativo} como alternativa.`;
         modelToUse = modelo_alternativo;
@@ -295,7 +299,7 @@ export async function handleAIGenerate(req: Request, res: Response) {
           }
           response = await generateOpenAIResponse(prompt, code, agentType, openaiKey.toString());
           break;
-        case "gemini-2.5-pro":
+        case "gemini-pro":
           if (!geminiKey) {
             return res
               .status(400)
@@ -305,6 +309,8 @@ export async function handleAIGenerate(req: Request, res: Response) {
           break;
         case "claude-3.7-sonnet":
         case "claude-3.5-sonnet-v2":
+        case "claude-3-opus":
+        case "claude-3-sonnet":
         case "claude-3":
         case "claude-2.1":
           if (!anthropicKey) {
@@ -345,7 +351,7 @@ export async function handleAIGenerate(req: Request, res: Response) {
       console.error(`Error específico del modelo ${model}:`, modelError);
 
       // Intentar con el siguiente modelo disponible
-      for (const modelo_alternativo of availableModels) {
+      for (const modelo_alternativo of availableModelsKeys) {
         if (modelo_alternativo !== model) {
           try {
             console.log(`Intentando con ${modelo_alternativo} como alternativa...`);
@@ -357,11 +363,13 @@ export async function handleAIGenerate(req: Request, res: Response) {
               case "o3-mini":
                 response = await generateOpenAIResponse(prompt, code, agentType);
                 break;
-              case "gemini-2.5-pro":
+              case "gemini-pro":
                 response = await generateGeminiResponse(prompt, code);
                 break;
               case "claude-3.7-sonnet":
               case "claude-3.5-sonnet-v2":
+              case "claude-3-opus":
+              case "claude-3-sonnet":
                 response = await generateClaudeResponse(prompt, code, modelo_alternativo);
                 break;
             }
@@ -410,11 +418,11 @@ export async function handleTerminalExecute(req: Request, res: Response) {
     }
 
     console.log(`Ejecutando comando: ${command}`);
-    
+
     // Implementación con spawn para mejor manejo de outputs grandes y en tiempo real
     const { spawn } = require("child_process");
     const options: any = {};
-    
+
     // Usar directorio de trabajo personalizado si se proporciona
     if (workingDirectory) {
       options.cwd = workingDirectory;
@@ -424,9 +432,9 @@ export async function handleTerminalExecute(req: Request, res: Response) {
     const parts = command.split(' ');
     const cmd = parts[0];
     const args = parts.slice(1);
-    
+
     const process = spawn(cmd, args, options);
-    
+
     let output = '';
     let errorOutput = '';
 
@@ -454,7 +462,7 @@ export async function handleTerminalExecute(req: Request, res: Response) {
 
 
 
-      
+
       res.json({ 
         output: output,
         error: false,
@@ -470,7 +478,7 @@ export async function handleTerminalExecute(req: Request, res: Response) {
         output: `Error al ejecutar el comando: ${err.message}`
       });
     });
-    
+
   } catch (error: any) {
     console.error("Error al ejecutar comando:", error);
     res
@@ -686,7 +694,7 @@ Devuelve la respuesta como un objeto JSON con el siguiente formato:
 `;
 
     const response = await generateOpenAIResponse(prompt);
-    
+
     // Intentar parsear la respuesta como JSON
     try {
       // Buscar el primer objeto JSON válido en la respuesta
@@ -694,14 +702,14 @@ Devuelve la respuesta como un objeto JSON con el siguiente formato:
       if (!jsonMatch) {
         throw new Error("No se encontró una estructura JSON válida en la respuesta");
       }
-      
+
       const projectData = JSON.parse(jsonMatch[0]);
-      
+
       // Validar la estructura
       if (!projectData.projectStructure || !Array.isArray(projectData.projectStructure.files)) {
         throw new Error("La estructura JSON no tiene el formato esperado");
       }
-      
+
       res.json(projectData);
     } catch (jsonError) {
       console.error("Error al parsear la respuesta JSON:", jsonError);
@@ -751,12 +759,12 @@ export async function handleFileCreation(req: Request, res: Response) {
 
         // Escribir el archivo
         fs.writeFileSync(file.path, file.content);
-        
+
         results.push({
           path: file.path,
           success: true
         });
-        
+
         console.log(`Archivo creado: ${file.path}`);
       } catch (fileError: any) {
         console.error(`Error al crear archivo ${file.path}:`, fileError);
