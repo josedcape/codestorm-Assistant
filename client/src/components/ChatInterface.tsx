@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { SendHorizonal, Mic, MicOff, Play, Terminal } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
@@ -34,9 +33,9 @@ const detectCommands = (text: string): string[] => {
     /^```sh\n\$?\s*(.*?)```/gms,
     /```\n\$?\s*(.*?)```/gms,
   ];
-  
+
   let commands: string[] = [];
-  
+
   // Buscar comandos usando los patrones
   for (const pattern of commandPatterns) {
     const matches = text.matchAll(pattern);
@@ -45,13 +44,13 @@ const detectCommands = (text: string): string[] => {
       // Limpiar el comando
       cmd = cmd.replace(/^`\$?\s*|\s*`$/g, '');
       cmd = cmd.replace(/^```(bash|sh)?\n\$?\s*|\s*```$/g, '');
-      
+
       if (cmd && !commands.includes(cmd)) {
         commands.push(cmd);
       }
     }
   }
-  
+
   return commands;
 };
 
@@ -66,7 +65,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const { executeCommand } = useAppContext();
-  
+
   // Scroll al final cuando cambian los mensajes
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -117,7 +116,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         {messages.map((message, index) => {
           // Detectar comandos en mensajes del asistente
           const detectedCommands = message.role === 'assistant' ? detectCommands(message.content) : [];
-          
+
           return (
             <div key={index} className="mb-4">
               <div className="flex items-start">
@@ -153,7 +152,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   >
                     {message.content}
                   </ReactMarkdown>
-                  
+
                   {/* Botones para ejecutar comandos detectados */}
                   {detectedCommands.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-2">
@@ -185,7 +184,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           </div>
         )}
       </ScrollArea>
-      
+
       <div className="p-2 border-t border-border">
         <div className="flex items-end">
           <Textarea
@@ -216,7 +215,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             </Button>
           </div>
         </div>
-        
+
         {isVoiceActive && (
           <VoiceRecognition 
             onTranscript={handleVoiceTranscript} 
@@ -240,7 +239,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 const MessageBubble = ({ message }: { message: Message }) => {
   const isUser = message.role === 'user';
-  
+
   return (
     <div className={`flex items-start space-x-3 mb-4 ${isUser ? 'justify-end' : ''}`}>
       {!isUser && (
@@ -248,11 +247,11 @@ const MessageBubble = ({ message }: { message: Message }) => {
           <Bot className="h-4 w-4" />
         </div>
       )}
-      
+
       <div className={`${isUser ? 'bg-blue-600/30 rounded-tr-none' : 'bg-blue-900/70 rounded-tl-none'} rounded-lg p-4 max-w-[85%]`}>
         <p className="text-sm">{message.content}</p>
       </div>
-      
+
       {isUser && (
         <div className="w-8 h-8 rounded-full bg-blue-700 flex items-center justify-center flex-shrink-0">
           <User className="h-4 w-4" />
@@ -272,28 +271,28 @@ export default function ChatInterface({ onVoiceInput, onFileUpload }: ChatInterf
   const { sendMessage, messages, isProcessing } = useChat();
   const { toast } = useToast();
   const chatContainerRef = useRef<HTMLDivElement>(null);
-  
+
   // Scroll to bottom when messages change
   useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
   }, [messages]);
-  
+
   const handleSendMessage = () => {
     if (inputValue.trim() === '') return;
-    
+
     sendMessage(inputValue);
     setInputValue('');
   };
-  
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
   };
-  
+
   const handleVoiceInput = () => {
     if (onVoiceInput) {
       onVoiceInput();
@@ -304,7 +303,7 @@ export default function ChatInterface({ onVoiceInput, onFileUpload }: ChatInterf
       });
     }
   };
-  
+
   const handleFileUpload = () => {
     if (onFileUpload) {
       onFileUpload();
@@ -315,7 +314,7 @@ export default function ChatInterface({ onVoiceInput, onFileUpload }: ChatInterf
       });
     }
   };
-  
+
   return (
     <div className="flex flex-col h-full">
       <ScrollArea className="flex-1 p-4" ref={chatContainerRef}>
@@ -334,7 +333,7 @@ export default function ChatInterface({ onVoiceInput, onFileUpload }: ChatInterf
           )}
         </div>
       </ScrollArea>
-      
+
       <div className="p-4 border-t border-border">
         <div className="flex items-center space-x-2">
           <Button variant="outline" size="icon" onClick={handleVoiceInput}>
