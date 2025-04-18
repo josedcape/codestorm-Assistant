@@ -254,6 +254,15 @@ const availableModelsKeys = Object.keys(availableModels);
 export async function handleAIGenerate(req: Request, res: Response) {
   try {
     const { model, prompt, code, agentType } = req.body;
+    
+    // Verificar API keys
+    const openaiKey = req.headers['x-openai-key'] || process.env.OPENAI_API_KEY;
+    if (!openaiKey) {
+      return res.status(400).json({ 
+        error: "API key de OpenAI no configurada. Por favor, configura la clave en la sección de API Keys.",
+        type: "api_key_missing"
+      });
+    }
 
     if (!prompt) {
       return res.status(400).json({ error: "Se requiere un prompt" });

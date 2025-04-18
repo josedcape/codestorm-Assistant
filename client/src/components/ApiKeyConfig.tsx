@@ -4,6 +4,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Alert, AlertDescription } from './ui/alert';
+import { AlertCircle } from 'lucide-react';
+
 
 const ApiKeyConfig: React.FC = () => {
   const [apiKeys, setApiKeys] = useState({
@@ -13,9 +16,10 @@ const ApiKeyConfig: React.FC = () => {
     alibaba: ''
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [openaiError, setOpenaiError] = useState('');
   const { toast } = useToast();
 
-  // Cargar claves API guardadas localmente
+  // Load saved API keys
   useEffect(() => {
     const savedOpenaiKey = localStorage.getItem('openai_api_key');
     const savedAnthropicKey = localStorage.getItem('anthropic_api_key');
@@ -34,7 +38,7 @@ const ApiKeyConfig: React.FC = () => {
     try {
       setIsSaving(true);
 
-      // Guardar en localStorage para uso del cliente
+      // Save to localStorage for client use
       if (apiKeys.openai) localStorage.setItem('openai_api_key', apiKeys.openai);
       if (apiKeys.anthropic) localStorage.setItem('anthropic_api_key', apiKeys.anthropic);
       if (apiKeys.google) localStorage.setItem('google_api_key', apiKeys.google);
@@ -57,10 +61,25 @@ const ApiKeyConfig: React.FC = () => {
     }
   };
 
+  const handleOpenAIKeyChange = (e) => {
+    const newKey = e.target.value;
+    setOpenaiError('');
+    setApiKeys({ ...apiKeys, openai: newKey });
+  };
+
+  const validateAndSaveOpenAIKey = () => {
+    if (!apiKeys.openai.startsWith('sk-')) {
+      setOpenaiError('La clave API de OpenAI debe comenzar con "sk-"');
+      return;
+    }
+    saveApiKeys();
+  };
+
+
   return (
     <div className="space-y-4 p-4 bg-card rounded-md">
       <h2 className="text-lg font-medium">Configuración de Claves API</h2>
-      
+
       <Accordion type="single" collapsible className="w-full">
         <AccordionItem value="openai">
           <AccordionTrigger className="text-sm">OpenAI (GPT-4.0)</AccordionTrigger>
@@ -71,15 +90,21 @@ const ApiKeyConfig: React.FC = () => {
                 id="openai-key"
                 type="password"
                 value={apiKeys.openai}
-                onChange={(e) => setApiKeys({...apiKeys, openai: e.target.value})}
+                onChange={handleOpenAIKeyChange}
                 placeholder="sk-..."
                 className="bg-background"
               />
+              {openaiError && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{openaiError}</AlertDescription>
+                </Alert>
+              )}
               <p className="text-xs text-muted-foreground">Necesario para GPT-4.0</p>
             </div>
           </AccordionContent>
         </AccordionItem>
-        
+
         <AccordionItem value="anthropic">
           <AccordionTrigger className="text-sm">Anthropic (Claude 3.7, Claude 3.5 Sonnet V2)</AccordionTrigger>
           <AccordionContent>
@@ -89,7 +114,7 @@ const ApiKeyConfig: React.FC = () => {
                 id="anthropic-key"
                 type="password"
                 value={apiKeys.anthropic}
-                onChange={(e) => setApiKeys({...apiKeys, anthropic: e.target.value})}
+                onChange={(e) => setApiKeys({ ...apiKeys, anthropic: e.target.value })}
                 placeholder="sk-ant-..."
                 className="bg-background"
               />
@@ -97,7 +122,7 @@ const ApiKeyConfig: React.FC = () => {
             </div>
           </AccordionContent>
         </AccordionItem>
-        
+
         <AccordionItem value="google">
           <AccordionTrigger className="text-sm">Google (Gemini 2.5)</AccordionTrigger>
           <AccordionContent>
@@ -107,7 +132,7 @@ const ApiKeyConfig: React.FC = () => {
                 id="google-key"
                 type="password"
                 value={apiKeys.google}
-                onChange={(e) => setApiKeys({...apiKeys, google: e.target.value})}
+                onChange={(e) => setApiKeys({ ...apiKeys, google: e.target.value })}
                 placeholder="AIza..."
                 className="bg-background"
               />
@@ -115,7 +140,7 @@ const ApiKeyConfig: React.FC = () => {
             </div>
           </AccordionContent>
         </AccordionItem>
-        
+
         <AccordionItem value="alibaba">
           <AccordionTrigger className="text-sm">Alibaba (Qwen)</AccordionTrigger>
           <AccordionContent>
@@ -125,7 +150,7 @@ const ApiKeyConfig: React.FC = () => {
                 id="alibaba-key"
                 type="password"
                 value={apiKeys.alibaba}
-                onChange={(e) => setApiKeys({...apiKeys, alibaba: e.target.value})}
+                onChange={(e) => setApiKeys({ ...apiKeys, alibaba: e.target.value })}
                 placeholder="sk-qwen-..."
                 className="bg-background"
               />
@@ -134,15 +159,15 @@ const ApiKeyConfig: React.FC = () => {
           </AccordionContent>
         </AccordionItem>
       </Accordion>
-      
-      <Button 
-        onClick={saveApiKeys} 
+
+      <Button
+        onClick={validateAndSaveOpenAIKey}
         disabled={isSaving}
         className="w-full"
       >
         {isSaving ? 'Guardando...' : 'Guardar claves API'}
       </Button>
-      
+
       <p className="text-xs text-muted-foreground text-center">
         Las claves API se almacenan de forma segura en tu navegador y se envían con cada solicitud.
         Para un funcionamiento completo, también debes configurar estas claves en las variables de entorno del servidor.
