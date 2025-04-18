@@ -1,8 +1,12 @@
-
-export async function processWithGemini(prompt: string, apiKey: string) {
-  const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent";
-  
+export async function processWithGemini(prompt: string) {
   try {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("Gemini API key no configurada");
+    }
+
+    const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent";
+
     const response = await fetch(`${url}?key=${apiKey}`, {
       method: "POST",
       headers: {
@@ -18,43 +22,24 @@ export async function processWithGemini(prompt: string, apiKey: string) {
         generationConfig: {
           temperature: 0.5,
           maxOutputTokens: 2000,
-        },
-        safetySettings: [
-          {
-            category: "HARM_CATEGORY_HATE_SPEECH",
-            threshold: "BLOCK_NONE"
-          },
-          {
-            category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-            threshold: "BLOCK_NONE"
-          },
-          {
-            category: "HARM_CATEGORY_HARASSMENT",
-            threshold: "BLOCK_NONE"
-          },
-          {
-            category: "HARM_CATEGORY_DANGEROUS_CONTENT",
-            threshold: "BLOCK_NONE"
-          }
-        ]
+        }
       }),
     });
-    
+
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
+      throw new Error(`Gemini API error: ${response.status}`);
     }
-    
+
     const data = await response.json();
-    
+
     if (!data.candidates || data.candidates.length === 0) {
       throw new Error("Empty response from Gemini API");
     }
-    
+
     return data.candidates[0].content.parts[0].text;
   } catch (error: any) {
     console.error("Gemini API error:", error);
-    throw new Error(`Error with Gemini API: ${error.message || 'Unknown error'}`);
+    throw new Error(`Error with Gemini API: ${error.message}`);
   }
 }
 

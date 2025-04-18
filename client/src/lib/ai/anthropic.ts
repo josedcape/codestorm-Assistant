@@ -1,23 +1,23 @@
-
 import Anthropic from '@anthropic-ai/sdk';
 
-export async function processWithAnthropic(prompt: string, apiKey: string) {
+export async function processWithAnthropic(prompt: string) {
   try {
-    // the newest Anthropic model is "claude-3-7-sonnet-20250219" which was released February 24, 2025
-    const anthropic = new Anthropic({
-      apiKey: apiKey,
-    });
-    
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      throw new Error("Anthropic API key no configurada");
+    }
+
+    const anthropic = new Anthropic({ apiKey });
+
     const response = await anthropic.messages.create({
       model: "claude-3-7-sonnet-20250219",
       max_tokens: 2500,
-      system: "You are CODESTORM AI, an autonomous development agent specializing in code generation and software development. Provide specific, actionable responses with accurate code samples when needed. Output in JSON format whenever possible. Keep responses concise and avoid unnecessary explanations.",
+      system: "You are CODESTORM AI, an autonomous development agent specializing in code generation and software development. Provide specific, actionable responses with accurate code samples when needed. Keep responses concise and direct.",
       messages: [
         { role: 'user', content: prompt }
       ],
     });
-    
-    // Asegurar que obtenemos correctamente el contenido del mensaje, verificando el tipo
+
     if (response.content[0].type === 'text') {
       return response.content[0].text;
     }
