@@ -806,7 +806,7 @@ const CodestormAssistant: React.FC<CodestormAssistantProps> = ({
                         }
                       }}
                     >
-                      <SendHorizonal size={14} />
+                      <SendHorizontal size={14} />
                     </Button>
                     <Button 
                       size="sm" 
