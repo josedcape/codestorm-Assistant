@@ -272,8 +272,7 @@ export async function handleAIGenerate(req: Request, res: Response) {
       `Generando respuesta con modelo ${model} y agente ${agentType || "default"}. Prompt: ${prompt.substring(0, 50)}...`,
     );
 
-    // Obtener claves API de los headers, localStorage o variables de entorno
-    const openaiKey = req.headers['x-openai-key'] || process.env.OPENAI_API_KEY;
+    // Obtener claves API de los headers o variables de entorno
     const anthropicKey = req.headers['x-anthropic-key'] || process.env.ANTHROPIC_API_KEY;
     const geminiKey = req.headers['x-gemini-key'] || process.env.GEMINI_API_KEY;
 
