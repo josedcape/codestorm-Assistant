@@ -279,11 +279,20 @@ export default function ChatInterface({ onVoiceInput, onFileUpload }: ChatInterf
     }
   }, [messages]);
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (inputValue.trim() === '') return;
 
-    sendMessage(inputValue);
-    setInputValue('');
+    try {
+      await sendMessage(inputValue);
+      setInputValue('');
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo enviar el mensaje. Por favor, verifica la configuración del API.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

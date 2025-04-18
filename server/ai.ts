@@ -109,6 +109,9 @@ Responde siempre en español y ofrece soluciones técnicas avanzadas con ejemplo
     console.error("Error al llamar a la API de OpenAI:", error);
     if (axios.isAxiosError(error) && error.response) {
       console.error("Detalles de la respuesta de error:", error.response.data);
+      if (error.response.status === 401) {
+        throw new Error('Error de autenticación. Verifica tu API key de OpenAI.');
+      }
     }
     throw error;
   }
