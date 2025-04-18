@@ -1,5 +1,8 @@
 import { Request, Response } from "express";
 import axios from "axios";
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 // Función para generar una respuesta de OpenAI
 async function generateOpenAIResponse(
@@ -254,7 +257,7 @@ const availableModelsKeys = Object.keys(availableModels);
 export async function handleAIGenerate(req: Request, res: Response) {
   try {
     const { model, prompt, code, agentType } = req.body;
-    
+
     // Verificar API keys
     const openaiKey = req.headers['x-openai-key'] || process.env.OPENAI_API_KEY;
     if (!openaiKey) {
@@ -415,7 +418,7 @@ export async function handleAIGenerate(req: Request, res: Response) {
 // Ruta para ejecutar comandos de terminal
 export async function handleTerminalExecute(req: Request, res: Response) {
   const { command } = req.body;
-  
+
   if (!command) {
     return res.status(400).json({ error: 'No se proporcionó ningún comando' });
   }
@@ -811,4 +814,21 @@ export async function handleFileCreation(req: Request, res: Response) {
       error: error.message || "Error interno del servidor" 
     });
   }
+}
+
+async function executeCommand(command: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const { exec } = require('child_process');
+    const child = exec(command, (error, stdout, stderr) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      if (stderr) {
+        reject(new Error(stderr));
+        return;
+      }
+      resolve(stdout.trim());
+    });
+  });
 }

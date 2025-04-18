@@ -6,12 +6,14 @@ export async function processWithOpenAI(prompt: string, apiKey: string) {
       throw new Error("La clave API de OpenAI no está configurada");
     }
 
-    // Validar formato de la API key
-    if (!apiKey.startsWith('sk-') || apiKey.length < 40) {
-      throw new Error("La clave API de OpenAI debe comenzar con 'sk-' y tener al menos 40 caracteres");
+    if (!apiKey.startsWith('sk-')) {
+      throw new Error("La clave API de OpenAI debe comenzar con 'sk-'");
     }
 
-    const openai = new OpenAI({ apiKey });
+    const openai = new OpenAI({ 
+      apiKey,
+      baseURL: "https://api.openai.com/v1"
+    });
 
     const response = await openai.chat.completions.create({
       model: "gpt-4",
@@ -41,8 +43,19 @@ export async function processWithOpenAI(prompt: string, apiKey: string) {
 
 export async function generateProjectStructure(description: string, apiKey: string) {
   try {
-    const openai = new OpenAI({ apiKey });
-    
+    if (!apiKey) {
+      throw new Error("La clave API de OpenAI no está configurada");
+    }
+
+    if (!apiKey.startsWith('sk-')) {
+      throw new Error("La clave API de OpenAI debe comenzar con 'sk-'");
+    }
+
+    const openai = new OpenAI({ 
+      apiKey,
+      baseURL: "https://api.openai.com/v1"
+    });
+
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
@@ -59,7 +72,7 @@ export async function generateProjectStructure(description: string, apiKey: stri
       temperature: 0.3,
       max_tokens: 1500,
     });
-    
+
     const content = response.choices[0].message.content;
     if (!content) {
       return {};
