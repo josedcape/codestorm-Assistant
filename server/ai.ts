@@ -238,12 +238,15 @@ async function generateClaudeResponse(
 
 // Ruta para manejar la generación de respuestas
 const availableModels = {
+  'gpt-4o': { provider: 'openai', name: 'GPT-4' },
   'gpt-4': { provider: 'openai', name: 'GPT-4' },
   'gpt-3.5-turbo': { provider: 'openai', name: 'GPT-3.5 Turbo' },
   'claude-3-opus': { provider: 'anthropic', name: 'Claude 3 Opus' },
   'claude-3-sonnet': { provider: 'anthropic', name: 'Claude 3 Sonnet' },
   'gemini-pro': { provider: 'google', name: 'Gemini Pro' }
 };
+
+const availableModelsKeys = Object.keys(availableModels);
 
 export async function handleAIGenerate(req: Request, res: Response) {
   try {
@@ -277,13 +280,12 @@ export async function handleAIGenerate(req: Request, res: Response) {
       console.log("Modelos disponibles:", availableModelsKeys);
       console.log("Modelo solicitado:", model);
 
-      // Si el modelo solicitado no está disponible, usar un modelo alternativo
+      // Verificar el modelo solicitado y usar alternativa si es necesario
       let modelToUse = model;
-      if (!availableModelsKeys.includes(model) && availableModelsKeys.length > 0) {
-        const modelo_alternativo = availableModelsKeys[0];
-        console.log(`Modelo ${model} no disponible, usando alternativa: ${modelo_alternativo}`);
-        warning = `El modelo ${model} no está disponible. Usando ${modelo_alternativo} como alternativa.`;
-        modelToUse = modelo_alternativo;
+      if (!model || !availableModels[model]) {
+        modelToUse = 'gpt-4'; // Modelo por defecto
+        console.log(`Modelo ${model} no válido, usando modelo por defecto: ${modelToUse}`);
+        warning = `El modelo solicitado no está disponible. Usando ${modelToUse} como alternativa.`;
       }
 
       switch (modelToUse) {
