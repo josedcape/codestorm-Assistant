@@ -7,24 +7,28 @@ export async function processWithOpenAI(prompt: string, apiKey: string) {
     }
 
     // Validar formato de la API key
-    if (!apiKey.startsWith('sk-')) {
-      throw new Error("Formato de API key inválido. Debe comenzar con 'sk-'");
+    if (!apiKey.startsWith('sk-') || apiKey.length < 40) {
+      throw new Error("La clave API de OpenAI debe comenzar con 'sk-' y tener al menos 40 caracteres");
     }
 
     const openai = new OpenAI({ apiKey });
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4",  // Usar modelo más estable
+      model: "gpt-4",
       messages: [
         { 
           role: "system", 
-          content: "Eres CODESTORM AI, un asistente de desarrollo especializado. Proporciona respuestas específicas y prácticas." 
+          content: "Eres un asistente de programación experto. Responde en español." 
         },
         { role: "user", content: prompt }
       ],
       temperature: 0.7,
       max_tokens: 2000
     });
+
+    if (!response.choices[0].message.content) {
+      throw new Error("No se recibió respuesta del modelo");
+    }
 
     return response.choices[0].message.content;
   } catch (error: any) {

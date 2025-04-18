@@ -69,8 +69,8 @@ Responde siempre en español y ofrece soluciones técnicas avanzadas con ejemplo
     console.log("Enviando solicitud a OpenAI...");
 
     // Verificar que la clave API sea válida
-    if (!openaiKey || openaiKey === 'your-openai-api-key') {
-      throw new Error('La clave API de OpenAI no está configurada. Por favor, configura una clave válida');
+    if (!openaiKey || openaiKey === 'your-openai-api-key' || !openaiKey.startsWith('sk-') || openaiKey.length < 40) {
+      throw new Error('La clave API de OpenAI no es válida. Debe comenzar con "sk-" y tener al menos 40 caracteres.');
     }
 
     const response = await axios.post(
