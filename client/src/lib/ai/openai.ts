@@ -4,7 +4,12 @@ export async function processWithOpenAI(prompt: string) {
   try {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
-      throw new Error("OpenAI API key no configurada");
+      throw new Error("La clave API de OpenAI no está configurada. Por favor, configura la clave en las variables de entorno.");
+    }
+    
+    // Validate API key format
+    if (!apiKey.startsWith('sk-')) {
+      throw new Error("La clave API de OpenAI parece inválida. Debe comenzar con 'sk-'");
     }
 
     const openai = new OpenAI({ apiKey });

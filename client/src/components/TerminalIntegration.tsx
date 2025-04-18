@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Terminal as TerminalIcon, Play, XCircle, Copy, Check, SendHorizonal } from 'lucide-react';
+import { Terminal as TerminalIcon, Play, XCircle, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAppContext } from '@/context/AppContext';
@@ -10,165 +10,61 @@ interface TerminalIntegrationProps {
 }
 
 const TerminalIntegration: React.FC<TerminalIntegrationProps> = ({ onExecuteCommand }) => {
-  const { addTerminalLine, clearTerminal: clearAppTerminal, executeCommand: executeAppCommand } = useAppContext();
+  const { addTerminalLine, clearTerminal: clearAppTerminal } = useAppContext();
   const [command, setCommand] = useState('');
   const [history, setHistory] = useState<Array<{type: 'command' | 'response', content: string}>>([]);
   const [isExecuting, setIsExecuting] = useState(false);
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
-  
+
   const terminalRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Auto-scroll to bottom when history changes
   useEffect(() => {
     if (terminalRef.current) {
       terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
     }
   }, [history]);
 
-  // Focus input on mount
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
 
-  // Función para detectar si es una instrucción en lenguaje natural
-  const isNaturalLanguageCommand = (cmd: string): boolean => {
-    const naturalLanguagePatterns = [
-      /instala|instalar|agregar|añadir|agrega/i,
-      /crear|crea|genera|generar|nuevo|nueva/i,
-      /ejecuta|ejecutar|corre|correr|inicia|iniciar/i,
-      /elimina|eliminar|borra|borrar|quita|quitar/i,
-      /busca|buscar|encuentra|encontrar/i,
-      /muestra|mostrar|listar|lista/i,
-      /cambia|cambiar|modifica|modificar/i,
-      /configura|configurar|establece|establecer/i
-    ];
-    
-    return naturalLanguagePatterns.some(pattern => pattern.test(cmd));
-  };
-  
-  // Función para convertir lenguaje natural a comando
-  const convertToTerminalCommand = async (naturalCommand: string): Promise<string> => {
-    try {
-      const { currentAgent } = useAppContext();
-      
-      // Usamos el servicio de IA para convertir la instrucción
-      const aiService = new AIService();
-      const prompt = `Convierte esta instrucción en lenguaje natural a un comando de terminal Linux válido, 
-                     devuelve SOLO el comando sin explicaciones adicionales: "${naturalCommand}"`;
-      
-      const response = await aiService.generateResponse(prompt, undefined, currentAgent);
-      
-      // Limpiamos la respuesta para obtener solo el comando
-      const cleanedResponse = response
-        .replace(/```bash|```sh|```/g, '')  // Eliminar bloques de código markdown
-        .replace(/^\s*\$\s*/, '')           // Eliminar símbolo $ al inicio
-        .trim();
-      
-      return cleanedResponse;
-    } catch (error) {
-      console.error('Error al convertir lenguaje natural a comando:', error);
-      throw new Error('No se pudo convertir la instrucción a un comando válido');
-    }
-  };
-
   const handleExecute = async () => {
     if (!command.trim() || isExecuting) return;
-    
+
     try {
       setIsExecuting(true);
-      
-      let commandToExecute = command;
-      let originalCommand = command;
-      
-      // Detectar si es lenguaje natural y convertir a comando
-      if (isNaturalLanguageCommand(command)) {
-        addTerminalLine({
-          text: `Interpretando: "${command}"`,
-          type: 'output'
-        });
-        
-        try {
-          commandToExecute = await convertToTerminalCommand(command);
-          addTerminalLine({
-            text: `Comando interpretado: ${commandToExecute}`,
-            type: 'success'
-          });
-        } catch (conversionError) {
-          console.error('Error en conversión:', conversionError);
-          addTerminalLine({
-            text: 'No se pudo interpretar la instrucción como un comando válido.',
-            type: 'error'
-          });
-          setIsExecuting(false);
-          return;
-        }
-      }
-      
-      // Añadir comando original al historial
-      setHistory(prev => [...prev, { type: 'command', content: originalCommand }]);
-      
-      // Añadir comando ejecutado al contexto de terminal
-      addTerminalLine({
-        text: commandToExecute,
-        type: 'command'
-      });
-      
+
+      // Add command to history
+      setHistory(prev => [...prev, { type: 'command', content: command }]);
+      addTerminalLine({ text: command, type: 'command' });
+
       if (onExecuteCommand) {
-        // Ejecutar el comando a través del servicio de IA
-        const response = await onExecuteCommand(commandToExecute);
-        
-        // Analizar y manejar la respuesta
+        const response = await onExecuteCommand(command);
+
         let formattedResponse = response;
         try {
           const parsedResponse = JSON.parse(response);
           formattedResponse = parsedResponse.output || response;
         } catch (e) {
-          // Si no es JSON, usar respuesta sin procesar
+          // If not JSON, use raw response
         }
-        
-        // Añadir respuesta al historial
-        setHistory(prev => [...prev, { 
-          type: 'response', 
-          content: formattedResponse
-        }]);
-        
-        // Añadir al contexto de terminal
-        addTerminalLine({
-          text: formattedResponse,
-          type: 'output'
-        });
-      } else {
-        // No hay función de ejecución proporcionada
-        setHistory(prev => [...prev, { 
-          type: 'response', 
-          content: 'La ejecución de comandos no está disponible en este contexto'
-        }]);
-        
-        // Añadir al contexto de terminal
-        addTerminalLine({
-          text: 'La ejecución de comandos no está disponible en este contexto',
-          type: 'error'
-        });
+
+        setHistory(prev => [...prev, { type: 'response', content: formattedResponse }]);
+        addTerminalLine({ text: formattedResponse, type: 'output' });
       }
-      
-      // Limpiar comando
+
       setCommand('');
     } catch (error) {
-      console.error('Error ejecutando comando:', error);
-      
-      const errorMessage = `Error: ${error instanceof Error ? error.message : 'Ocurrió un error desconocido'}`;
-      
-      setHistory(prev => [...prev, { 
-        type: 'response', 
-        content: errorMessage
-      }]);
-      
-      // Añadir al contexto de terminal
-      addTerminalLine({
-        text: errorMessage,
-        type: 'error'
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      setHistory(prev => [...prev, { type: 'response', content: `Error: ${errorMessage}` }]);
+      addTerminalLine({ text: `Error: ${errorMessage}`, type: 'error' });
+
+      toast({
+        title: "Error al ejecutar comando",
+        description: errorMessage,
+        variant: "destructive"
       });
     } finally {
       setIsExecuting(false);
@@ -188,11 +84,10 @@ const TerminalIntegration: React.FC<TerminalIntegrationProps> = ({ onExecuteComm
   };
 
   const copyToClipboard = () => {
-    const text = history.map(item => {
-      const prefix = item.type === 'command' ? '$ ' : '> ';
-      return prefix + item.content;
-    }).join('\n');
-    
+    const text = history
+      .map(item => `${item.type === 'command' ? '$ ' : '> '}${item.content}`)
+      .join('\n');
+
     navigator.clipboard.writeText(text).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -227,13 +122,13 @@ const TerminalIntegration: React.FC<TerminalIntegrationProps> = ({ onExecuteComm
           </Button>
         </div>
       </div>
-      
+
       <div 
         ref={terminalRef}
         className="bg-[#121212] border border-muted rounded-md m-2 p-3 h-60 overflow-y-auto font-mono text-sm"
       >
         {history.length === 0 ? (
-          <p className="text-muted-foreground italic text-xs">Escribe comandos o usa la asistencia por voz</p>
+          <p className="text-muted-foreground italic text-xs">Terminal lista para ejecutar comandos</p>
         ) : (
           history.map((item, index) => (
             <div key={index} className="mb-2">
@@ -249,7 +144,7 @@ const TerminalIntegration: React.FC<TerminalIntegrationProps> = ({ onExecuteComm
           <div className="text-yellow-400">Ejecutando comando...</div>
         )}
       </div>
-      
+
       <div className="p-2 flex items-center border-t border-muted">
         <span className="text-green-400 font-mono mr-2">$</span>
         <Input

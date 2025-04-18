@@ -406,6 +406,21 @@ export async function handleAIGenerate(req: Request, res: Response) {
 
 // Ruta para ejecutar comandos de terminal
 export async function handleTerminalExecute(req: Request, res: Response) {
+  const { command } = req.body;
+  
+  if (!command) {
+    return res.status(400).json({ error: 'No se proporcionó ningún comando' });
+  }
+
+  try {
+    const result = await executeCommand(command);
+    res.json({ output: result });
+  } catch (error) {
+    console.error('Error ejecutando comando:', error);
+    res.status(500).json({ 
+      error: error instanceof Error ? error.message : 'Error al ejecutar el comando' 
+    });
+  }
   try {
     const { command, workingDirectory } = req.body;
 
