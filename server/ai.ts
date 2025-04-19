@@ -423,15 +423,24 @@ export async function handleTerminalExecute(req: Request, res: Response) {
     return res.status(400).json({ error: 'No se proporcionó ningún comando' });
   }
 
+  // Sanitización básica de comandos
+  const forbiddenCommands = ['rm -rf /', 'rm -rf *', 'rm -rf .', 'chmod -R 777'];
+  if (forbiddenCommands.some(forbidden => command.includes(forbidden))) {
+    return res.status(403).json({ 
+      error: "Comando no permitido por razones de seguridad"
+    });
+  }
+
   try {
     const result = await executeCommand(command);
-    res.json({ output: result });
+    return res.json({ output: result });
   } catch (error) {
     console.error('Error ejecutando comando:', error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       error: error instanceof Error ? error.message : 'Error al ejecutar el comando' 
     });
   }
+}
   try {
     const { command, workingDirectory } = req.body;
 
@@ -820,16 +829,15 @@ import { exec } from 'child_process';
 
 async function executeCommand(command: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    const child = exec(command, (error, stdout, stderr) => {
+    exec(command, (error, stdout, stderr) => {
       if (error) {
         reject(error);
         return;
       }
       if (stderr) {
-        reject(new Error(stderr));
-        return;
+        console.error('Command stderr:', stderr);
       }
-      resolve(stdout.trim());
+      resolve(stdout.trim() || stderr.trim() || 'Comando ejecutado');
     });
   });
 }
