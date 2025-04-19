@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { SendHorizonal, Mic, MicOff, Play, Terminal } from 'lucide-react';
+import { SendHorizonal, Mic, MicOff, Play, Terminal, File } from 'lucide-react'; // Added File icon
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -54,6 +54,21 @@ const detectCommands = (text: string): string[] => {
   return commands;
 };
 
+
+// Function to detect code blocks
+const detectCodeBlocks = (text: string): { code: string; language: string }[] => {
+  const codeBlockRegex = /```(\w+)\n([\s\S]*?)```/g;
+  const codeBlocks: { code: string; language: string }[] = [];
+  let match;
+
+  while ((match = codeBlockRegex.exec(text)) !== null) {
+    codeBlocks.push({ code: match[2].trim(), language: match[1] });
+  }
+
+  return codeBlocks;
+};
+
+
 const ChatInterface: React.FC<ChatInterfaceProps> = ({
   messages,
   onSendMessage,
@@ -94,7 +109,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     setInput(transcript);
   };
 
-  const executeDetectedCommand = async (command: string) => {
+  const handleExecuteCommand = async (command: string) => {
     try {
       await executeCommand(command);
       toast({
@@ -110,12 +125,30 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   };
 
+  const handleCreateFile = (code: string, language: string) => {
+    // Implement file creation logic here.  This is a placeholder.
+    const filename = `code.${language}`;
+    const blob = new Blob([code], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: 'Archivo creado',
+      description: `Se ha creado el archivo ${filename}`
+    });
+  };
+
   return (
     <div className="flex flex-col h-full border border-border rounded-md bg-sidebar">
       <ScrollArea ref={scrollAreaRef} className="flex-1 p-4">
         {messages.map((message, index) => {
           // Detectar comandos en mensajes del asistente
           const detectedCommands = message.role === 'assistant' ? detectCommands(message.content) : [];
+          const codeBlocks = message.role === 'assistant' ? detectCodeBlocks(message.content) : []; // Added code block detection
 
           return (
             <div key={index} className="mb-4">
@@ -162,10 +195,29 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                           variant="outline"
                           size="sm"
                           className="text-xs flex items-center gap-1"
-                          onClick={() => executeDetectedCommand(cmd)}
+                          onClick={() => handleExecuteCommand(cmd)}
                         >
                           <Terminal size={12} />
                           <span className="max-w-[200px] truncate">{cmd}</span>
+                          <Play size={12} />
+                        </Button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Botones para crear archivos de código */}
+                  {codeBlocks.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {codeBlocks.map((block, blockIndex) => (
+                        <Button
+                          key={blockIndex}
+                          variant="outline"
+                          size="sm"
+                          className="text-xs flex items-center gap-1"
+                          onClick={() => handleCreateFile(block.code, block.language)}
+                        >
+                          <File size={12} /> {/* Using File icon */}
+                          <span>Crear archivo .{block.language}</span>
                           <Play size={12} />
                         </Button>
                       ))}
@@ -196,18 +248,18 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             disabled={isLoading}
           />
           <div className="flex flex-col gap-2 ml-2">
-            <Button 
-              size="icon" 
-              variant={isVoiceActive ? "destructive" : "outline"} 
-              className="h-8 w-8" 
+            <Button
+              size="icon"
+              variant={isVoiceActive ? "destructive" : "outline"}
+              className="h-8 w-8"
               onClick={() => setIsVoiceActive(!isVoiceActive)}
             >
               {isVoiceActive ? <MicOff size={16} /> : <Mic size={16} />}
             </Button>
-            <Button 
-              size="icon" 
-              variant="default" 
-              className="h-8 w-8" 
+            <Button
+              size="icon"
+              variant="default"
+              className="h-8 w-8"
               onClick={handleSendMessage}
               disabled={input.trim() === '' || isLoading}
             >
@@ -217,9 +269,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
 
         {isVoiceActive && (
-          <VoiceRecognition 
-            onTranscript={handleVoiceTranscript} 
-            onCommand={() => {}} 
+          <VoiceRecognition
+            onTranscript={handleVoiceTranscript}
+            onCommand={() => { }}
           />
         )}
       </div>
