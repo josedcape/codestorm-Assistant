@@ -417,48 +417,24 @@ export async function handleAIGenerate(req: Request, res: Response) {
 
 // Ruta para ejecutar comandos de terminal
 export async function handleTerminalExecute(req: Request, res: Response) {
-  const { command } = req.body;
+  const { command, workingDirectory } = req.body;
 
   if (!command) {
-    return res.status(400).json({ error: 'No se proporcionó ningún comando' });
+    return res.status(400).json({ error: "Se requiere un comando" });
   }
 
-  // Sanitización básica de comandos
+  // Sanitización básica de comandos para prevenir ejecución de comandos maliciosos
   const forbiddenCommands = ['rm -rf /', 'rm -rf *', 'rm -rf .', 'chmod -R 777'];
   if (forbiddenCommands.some(forbidden => command.includes(forbidden))) {
     return res.status(403).json({ 
-      error: "Comando no permitido por razones de seguridad"
+      error: "Comando no permitido por razones de seguridad",
+      output: "⚠️ Este comando podría causar daños al sistema y ha sido bloqueado por seguridad."
     });
   }
 
+  console.log(`Ejecutando comando: ${command}`);
+
   try {
-    const result = await executeCommand(command);
-    return res.json({ output: result });
-  } catch (error) {
-    console.error('Error ejecutando comando:', error);
-    return res.status(500).json({ 
-      error: error instanceof Error ? error.message : 'Error al ejecutar el comando' 
-    });
-  }
-}
-  try {
-    const { command, workingDirectory } = req.body;
-
-    if (!command) {
-      return res.status(400).json({ error: "Se requiere un comando" });
-    }
-
-    // Sanitización básica de comandos para prevenir ejecución de comandos maliciosos
-    const forbiddenCommands = ['rm -rf /', 'rm -rf *', 'rm -rf .', 'chmod -R 777'];
-    if (forbiddenCommands.some(forbidden => command.includes(forbidden))) {
-      return res.status(403).json({ 
-        error: "Comando no permitido por razones de seguridad",
-        output: "⚠️ Este comando podría causar daños al sistema y ha sido bloqueado por seguridad."
-      });
-    }
-
-    console.log(`Ejecutando comando: ${command}`);
-
     // Implementación con spawn para mejor manejo de outputs grandes y en tiempo real
     const { spawn } = require("child_process");
     const options: any = {};
@@ -500,9 +476,6 @@ export async function handleTerminalExecute(req: Request, res: Response) {
         });
       }
 
-
-
-
       res.json({ 
         output: output,
         error: false,
@@ -521,12 +494,10 @@ export async function handleTerminalExecute(req: Request, res: Response) {
 
   } catch (error: any) {
     console.error("Error al ejecutar comando:", error);
-    res
-      .status(500)
-      .json({ 
-        error: true,
-        output: error.message || "Error interno del servidor" 
-      });
+    res.status(500).json({ 
+      error: true,
+      output: error.message || "Error interno del servidor" 
+    });
   }
 }
 
