@@ -816,9 +816,10 @@ export async function handleFileCreation(req: Request, res: Response) {
   }
 }
 
+import { exec } from 'child_process';
+
 async function executeCommand(command: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    const { exec } = require('child_process');
     const child = exec(command, (error, stdout, stderr) => {
       if (error) {
         reject(error);
